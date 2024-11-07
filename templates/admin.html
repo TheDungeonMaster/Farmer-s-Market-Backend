@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">Admin Dashboard</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">Logout</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h2 class="mb-4">Welcome, Admin</h2>
+
+        <!-- Pending Farmers Section -->
+        <div class="card mb-4">
+            <div class="card-header">Pending Farmer Registrations</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Phone Number</th>
+                                <th>Email</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingFarmers">
+                            <!-- Rows with pending farmers' data will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyers Section -->
+        <div class="card mb-4">
+            <div class="card-header">Registered Buyers</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Address</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Phone Number</th>
+                            </tr>
+                        </thead>
+                        <tbody id="buyersList">
+                            <!-- Rows with buyers' data will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Settings Section -->
+        <div class="card mb-4">
+            <div class="card-header">System Settings</div>
+            <div class="card-body">
+                <p>Manage system settings, user roles, and other configurations here.</p>
+                <button class="btn btn-primary">Manage Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for handling approve/reject actions -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function renderPendingFarmers() {
+            $.ajax({
+                url: '/admin/pending-farmers',
+                method: 'GET',
+                success: function(data) {
+                    const farmerTable = document.getElementById("pendingFarmers");
+                    farmerTable.innerHTML = "";
+                    data.forEach(farmer => {
+                        const row = `<tr>
+                            <td>${farmer.farmer_id}</td>
+                            <td>${farmer.first_name}</td>
+                            <td>${farmer.last_name}</td>
+                            <td>${farmer.username}</td>
+                            <td>${farmer.phone_number}</td>
+                            <td>${farmer.email}</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="approveFarmer(${farmer.farmer_id})">Approve</button>
+                                <button class="btn btn-danger btn-sm" onclick="rejectFarmer(${farmer.farmer_id})">Reject</button>
+                            </td>
+                        </tr>`;
+                        farmerTable.innerHTML += row;
+                    });
+                },
+                error: function(error) {
+                    console.error("Error fetching pending farmers:", error);
+                }
+            });
+        }
+
+        function renderBuyersList() {
+            $.ajax({
+                url: '/admin/buyers',
+                method: 'GET',
+                success: function(data) {
+                    console.log(data);
+                    const buyerTable = document.getElementById("buyersList");
+                    buyerTable.innerHTML = "";
+                    data.forEach(buyer => {
+                        const row = `<tr>
+                            <td>${buyer.buyer_id}</td>
+                            <td>${buyer.first_name}</td>
+                            <td>${buyer.last_name}</td>
+                            <td>${buyer.address}</td>
+                            <td>${buyer.username}</td>
+                            <td>${buyer.email}</td>
+                            <td>${buyer.phone_number}</td>
+                        </tr>`;
+                        buyerTable.innerHTML += row;
+                    })
+                }
+            });
+        }
+
+        // Approve farmer
+        function approveFarmer(farmer_id) {
+            // Add an AJAX call here to approve the farmer in the backend
+            $.ajax({
+                url: '/admin/approve-farmer/' + farmer_id,
+                method: 'POST',
+                success: function() {
+                    alert('Farmer' + farmer_id + 'approved');
+                    renderPendingFarmers();
+                }
+            });
+        }
+
+        // Reject farmer
+        function rejectFarmer(farmer_id) {
+            // Add an AJAX call here to reject the farmer in the backend
+            $.ajax({
+                url: '/admin/reject-farmer/' + farmer_id,
+                method: 'POST',
+                success: function() {
+                    alert('Farmer' + farmer_id + 'rejected');
+                    renderPendingFarmers();
+                }
+            });
+        }
+
+        // Initial render of lists
+        renderPendingFarmers();
+        renderBuyersList();
+    </script>
+</body>
+</html>

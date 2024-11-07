@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Farmer Dashboard</title>
+</head>
+<body>
+    <h2>Welcome, {{ current_user.username }}</h2>
+    <h3>Farm Information</h3>
+    <p><strong>Farm Name:</strong> {{ farm.farm_name }}</p>
+    <p><strong>Location:</strong> {{ farm.location }}</p>
+    <p><strong>Size:</strong> {{ farm.farm_size }} acres</p>
+    <p><strong>Crop Type:</strong> {{ farm.crop_type }}</p>
+
+</body>
+</html>
