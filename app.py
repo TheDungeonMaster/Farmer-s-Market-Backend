@@ -318,6 +318,68 @@ def  logout():
     logout_user()
     return redirect(url_for('index'))
 
+#API FOR REGISTRATION
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    role = data.get("role", "buyer").lower()
+
+    if role not in ["buyer", "farmer"]:
+        return jsonify({"message": "Invalid role"}), 400
+
+    email = data.get("email")
+    password = data.get("password")
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    
+    user = User(email=email, password=hashed_password, role=role)
+    db.session.add(user)
+    db.session.flush()
+    
+    if user.role == 'buyer':
+        buyer = Buyer(first_name=data.get("first_name"), 
+                      last_name=data.get("last_name"),
+                      address = data.get("address"),
+                      username = data.get("username"),
+                      email = email,
+                      phone_number=data.get("phone_number"))
+        db.session.add(buyer)
+        db.session.commit()
+    elif user.role == 'farmer':
+        farmer = Farmer(first_name=data.get("first_name"),
+                        last_name = data.get("last_name"),
+                        username = data.get("username"),
+                        phone_number=data.get("phone_number"),
+                        email=email)
+        
+        db.session.add(farmer)
+        db.session.commit()
+        
+        farm = Farm(crop_type = data.get("crop_type"),
+                    farm_name = data.get("farm_name"),
+                    location = data.get("location"),
+                    farm_size = data.get("farm_size"),
+                    farmer_id = farmer.farmer_id)
+        db.session.add(farm)
+        db.session.commit()
+    return jsonify({"message": f"{role.capitalize()} registered successfully"}), 201
+
+#API FOR LOGIN
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    email = data.get("email")
+    password = data.get("password")
+
+    user = User.query.filter_by(email=email).first()
+    
+    if user and check_password_hash(user.password, password):
+        login_user(user)
+        response = {"message": f"{user.role.capitalize()} logged in successfully", "role": user.role}
+
+        return jsonify(response), 200
+    else:
+        return jsonify({"message": "Invalid credentials"}), 401
+        
 #Main
 if __name__ in '__main__':
         app.run(debug = True)
