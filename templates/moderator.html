@@ -54,6 +54,7 @@
                                 <th>ID</th>
                                 <th>First Name</th>
                                 <th>Last Name</th>
+                                <th>Username</th>
                                 <th>Phone Number</th>
                                 <th>Email</th>
                                 <th>Actions</th>
@@ -127,16 +128,11 @@
                             <!-- Rows with buyers' data will be dynamically populated here -->
                         </tbody>
                     </table>
+                    <div id="buyersPagination" class="pagination">
+                        <button onclick="changePage('buyers', -1)" class="btn btn-primary btn-sm mr-2" id="buyersPrev">Previous</button>
+                        <button onclick="changePage('buyers', 1)" class="btn btn-primary btn-sm" id="buyersNext">Next</button>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- System Settings Section -->
-        <div class="card mb-4">
-            <div class="card-header">Create new admin account</div>
-            <div class="card-body">
-                <p>You can create new admin/moderator accounts here.</p>
-                <button class="btn btn-primary">Create new account</button>
             </div>
         </div>
     </div>
@@ -183,8 +179,11 @@
                                 <button class="btn btn-danger btn-sm" onclick="rejectFarmer(${farmer.farmer_id})">Reject</button>
                             </td>
                         </tr>`;
-                        farmerTable.innerHTML += row;
+                        pendingFarmerTable.innerHTML += row;
                     });
+                    document.getElementById("pendingFarmersPagination").style.display = data.length > pageSize ? 'block' : 'none';
+                    document.getElementById("pendingFarmersPrev").disabled = pendingFarmersPage === 0;
+                    document.getElementById("pendingFarmersNext").disabled = end >= data.length;
                 },
                 error: function(error) {
                     console.error("Error fetching pending farmers:", error);
@@ -271,7 +270,10 @@
                             <td>${buyer.phone_number}</td>
                         </tr>`;
                         buyerTable.innerHTML += row;
-                    })
+                    });
+                    document.getElementById("buyersPagination").style.display = data.length > pageSize ? 'block' : 'none';
+                    document.getElementById("buyersPrev").disabled = buyersPage === 0;
+                    document.getElementById("buyersNext").disabled = end >= data.length;
                 }
             });
         }
@@ -283,8 +285,9 @@
                 url: '/admin/approve-farmer/' + farmer_id,
                 method: 'POST',
                 success: function() {
-                    alert('Farmer ' + farmer_id + ' approved');
+                    alert('Farmer' + farmer_id + 'approved');
                     renderPendingFarmers();
+                    renderFarmersList();
                 }
             });
         }
@@ -302,8 +305,39 @@
             });
         }
 
+        function banFarmer(farmer_id) {
+            // Confirm ban action and send request to backend
+            if (confirm("Are you sure you want to ban this farmer?")) {
+                $.ajax({
+                    url: '/admin/ban-farmer/' + farmer_id,
+                    method: 'POST',
+                    success: function() {
+                        alert('Farmer ' + farmer_id + ' has been banned.');
+                        renderFarmersList(); // Refresh the list after banning
+                    },
+                    error: function(error) {
+                        console.error("Error banning farmer:", error);
+                    }
+                });
+            }
+        }
+
+        function changePage(section, increment) {
+            if (section === 'pendingFarmers') {
+                pendingFarmersPage = Math.max(0, pendingFarmersPage + increment);
+                renderPendingFarmers();
+            } else if (section === 'farmers') {
+                farmersPage = Math.max(0, farmersPage + increment);
+                renderFarmersList();
+            } else if (section === 'buyers') {
+                buyersPage = Math.max(0, buyersPage + increment);
+                renderBuyersList();
+            }
+        }
+
         // Initial render of lists
         renderPendingFarmers();
+        renderFarmersList();
         renderBuyersList();
     </script>
 </body>

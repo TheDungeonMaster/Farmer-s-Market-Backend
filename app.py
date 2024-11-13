@@ -44,6 +44,8 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(150), nullable=False)
     role = db.Column(db.String(10), nullable=False)
     two_factor_secret = db.Column(db.String(16))
+    status = db.Column(db.String(20), default='active')
+    username = db.Column(db.String(20))
     def get_id(self):
            return (self.user_id)
 
@@ -106,7 +108,7 @@ def products():
 def setup_admin():
     if not User.query.filter_by(role='admin').first():
         hashed_password = generate_password_hash('admin', method='pbkdf2:sha256')
-        admin = User(email='zhandos.dias.m@gmail.com', password=hashed_password, role='admin')
+        admin = User(email='admin@mail.com', password=hashed_password, role='admin', username='admin')
         db.session.add(admin)
         db.session.commit()
         return "Admin created!"
@@ -115,7 +117,9 @@ def setup_admin():
 @app.route('/admin')
 @login_required
 def admin():
-    return render_template('admin.html')
+    if current_user.email == 'admin@mail.com':
+        return render_template('admin.html')
+    return render_template('moderator.html')
 
 @app.route('/admin/pending-farmers', methods=['GET'])
 @login_required
@@ -198,7 +202,7 @@ def register_farmer_post():
     farm_size = request.form.get('farm_size')
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     
-    user = User(email=email, password=hashed_password, role='farmer')
+    user = User(email=email, password=hashed_password, role='farmer', username = username)
     db.session.add(user)
     db.session.flush()
     
@@ -251,7 +255,7 @@ def register_buyer_post():
     password = request.form.get('password')
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     
-    user = User(email=email, password=hashed_password, role='buyer')
+    user = User(email=email, password=hashed_password, role='buyer', username = username)
     db.session.add(user)
     db.session.flush()
     
@@ -288,11 +292,21 @@ def login():
 
 @app.route('/login', methods=['POST'])
 def login_post():
-    email = request.form.get('email')
+    email_or_username = request.form.get('email_or_username')
     password = request.form.get('password')
     
-    user = User.query.filter_by(email=email).first()
+    user = User.query.filter_by(email=email_or_username).first()
+    if not user:
+        user = User.query.filter_by(username=email_or_username).first()
     
+    try:
+        if user.status == 'banned':
+            flash('Your account has been banned', 'error')
+            return redirect(url_for('login'))
+    except AttributeError:
+        flash('Invalid credentials!', 'error')
+        return redirect(url_for('login'))
+
     if user and check_password_hash(user.password, password):
         if user.role == 'admin':
             login_user(user)
@@ -309,8 +323,8 @@ def login_post():
         elif user.role == 'buyer':
             login_user(user)
             return redirect(url_for('products'))
-
-    return jsonify({"message": "Invalid credentials"}), 401
+    flash('Invalid credentials!', 'error')
+    return redirect(url_for('login'))
 
 @app.route('/logout')
 @login_required
@@ -318,6 +332,72 @@ def  logout():
     logout_user()
     return redirect(url_for('index'))
 
+#API FOR REGISTRATION
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    data = request.get_json()
+    role = data.get("role", "buyer").lower()
+    username = data.get("username")
+
+    if role not in ["buyer", "farmer"]:
+        return jsonify({"message": "Invalid role"}), 400
+
+    email = data.get("email")
+    password = data.get("password")
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    
+    user = User(email=email, password=hashed_password, role=role, username=username)
+    db.session.add(user)
+    db.session.flush()
+    
+    if user.role == 'buyer':
+        buyer = Buyer(first_name=data.get("first_name"), 
+                      last_name=data.get("last_name"),
+                      address = data.get("address"),
+                      username = data.get("username"),
+                      email = email,
+                      phone_number=data.get("phone_number"))
+        db.session.add(buyer)
+        db.session.commit()
+    elif user.role == 'farmer':
+        farmer = Farmer(first_name=data.get("first_name"),
+                        last_name = data.get("last_name"),
+                        username = data.get("username"),
+                        phone_number=data.get("phone_number"),
+                        email=email)
+        
+        db.session.add(farmer)
+        db.session.commit()
+        
+        farm = Farm(crop_type = data.get("crop_type"),
+                    farm_name = data.get("farm_name"),
+                    location = data.get("location"),
+                    farm_size = data.get("farm_size"),
+                    farmer_id = farmer.farmer_id)
+        db.session.add(farm)
+        db.session.commit()
+    return jsonify({"message": f"{role.capitalize()} registered successfully"}), 201
+
+#API FOR LOGIN
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+    email_or_username = data.get("email_or_username")
+    password = data.get("password")
+    username = data.get("username")
+    
+    user = User.query.filter_by(email=email_or_username).first()
+    if not user and username:
+        user = User.query.filter_by(username=email_or_username).first()
+    
+    if user and check_password_hash(user.password, password):
+        login_user(user)
+        response = {"message": f"{user.role.capitalize()} logged in successfully", "role": user.role}
+
+        return jsonify(response), 200
+    else:
+        return jsonify({"message": "Invalid credentials"}), 401
+        
 #Main
 if __name__ in '__main__':
         app.run(debug = True)

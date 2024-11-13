@@ -35,6 +35,7 @@
         .registration-container input[type="text"],
         .registration-container input[type="email"],
         .registration-container input[type="tel"],
+        .registration-container input[type="password"],
         .registration-container textarea,
         .registration-container input[type="submit"] {
             width: 100%;
@@ -57,10 +58,31 @@
         .registration-container input[type="submit"]:hover {
             background-color: #45a049;
         }
+        .menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .menu a {
+            color: #4CAF50;
+            font-weight: bold;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .menu a:hover {
+            background-color: #4CAF50;
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
 
+<div class='menu'>
+    <a href="/">Home</a>
+</div>
 <div class="registration-container">
     <h2>Buyer Registration</h2>
     <form action="/register/buyer" method="POST">
