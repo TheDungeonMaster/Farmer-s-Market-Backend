@@ -139,6 +139,24 @@ def pending_farmers():
     ]
     return jsonify(farmer_list)
 
+@app.route('/admin/farmers', methods=['GET'])
+@login_required
+def approved_farmers():
+    approved_farmers = Farmer.query.filter_by(status='approved').all()
+    
+    approved_farmers_list = [
+        {
+            "farmer_id": approved_farmer.farmer_id,
+            "first_name": approved_farmer.first_name,
+            "last_name": approved_farmer.last_name,
+            "username": approved_farmer.username,
+            "phone_number": approved_farmer.phone_number,
+            "email": approved_farmer.email,
+        }
+        for approved_farmer in approved_farmers
+    ]
+    return jsonify(approved_farmers_list)
+
 @app.route('/admin/approve-farmer/<int:farmer_id>', methods=['POST'])
 @login_required
 def approve_farmer(farmer_id):
@@ -177,6 +195,22 @@ def reject_farmer(farmer_id):
 
         # return jsonify({"message": "Farmer rejected"})
         return redirect(url_for('admin'))
+    return jsonify({"message": "Farmer not found"}), 404
+
+@app.route('/admin/ban-farmer/<int:farmer_id>', methods=['POST'])
+@login_required
+def ban_farmer(farmer_id):
+    if current_user.role != 'admin':
+        return jsonify({"message": "Unauthorized"}), 403
+
+    farmer = Farmer.query.get(farmer_id)
+    email = farmer.email
+    user = User.query.filter_by(email=email).first()
+    if farmer:
+        farmer.status = "banned"
+        user.status = "banned"
+        db.session.commit()
+        return jsonify({"message": "Farmer banned"})
     return jsonify({"message": "Farmer not found"}), 404
 
 @app.route('/register')

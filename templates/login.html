@@ -69,6 +69,11 @@
             background-color: #4CAF50;
             color: #ffffff;
         }
+        .error {
+            text-align: center;
+            font-size: 20px;
+            padding: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -78,6 +83,13 @@
 </div>
 <div class="login-container">
     <h2>Login</h2>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class='error'>{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     <form action="/login" method="POST">
         <label for="email_or_username">Email or Username:</label>
         <input type="text" id="email_or_username" name="email_or_username" required>
