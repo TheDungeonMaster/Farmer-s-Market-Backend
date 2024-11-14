@@ -58,6 +58,7 @@ class Buyer(db.Model):
     username = db.Column(db.String(20))
     email = db.Column(db.String(100), unique=True)
     phone_number = db.Column(db.String(50), unique=True)
+    status = db.Column(db.String(20), default='active')
     def get_id(self):
            return (self.user_id)
     
@@ -157,6 +158,75 @@ def approved_farmers():
     ]
     return jsonify(approved_farmers_list)
 
+@app.route('/admin/banned-users', methods=['GET'])
+@login_required
+def banned_users():
+    banned_users = User.query.filter_by(status='banned').all()
+    
+    banned_users_list = []
+    for banned_user in banned_users:
+        if banned_user.role == 'farmer':
+            banned_farmer = Farmer.query.filter_by(email=banned_user.email).first()
+            banned_users_list.append({
+                "user_id": banned_user.user_id,
+                'role': banned_user.role,
+                "first_name": banned_farmer.first_name,
+                "last_name": banned_farmer.last_name,
+                "username": banned_farmer.username,
+                "email": banned_farmer.email,
+                "phone_number": banned_farmer.phone_number,
+            })
+        elif banned_user.role == 'buyer':
+            banned_buyer = Buyer.query.filter_by(email=banned_user.email).first()
+            banned_users_list.append({
+            "user_id": banned_user.user_id,
+            'role': banned_user.role,
+            "first_name": banned_buyer.first_name,
+            "last_name": banned_buyer.last_name,
+            "username": banned_buyer.username,
+            "phone_number": banned_buyer.phone_number,
+            "email": banned_buyer.email,
+        })
+    return jsonify(banned_users_list)
+
+@app.route('/admin/banned-farmers', methods=['GET'])
+@login_required
+def banned_farmers():
+    banned_users = User.query.filter_by(status='banned', role='farmer').all()
+    
+    banned_users_list = []
+    for banned_user in banned_users:
+        banned_farmer = Farmer.query.filter_by(email=banned_user.email).first()
+        banned_users_list.append({
+            "user_id": banned_user.user_id,
+            'role': 'farmer',
+            "first_name": banned_farmer.first_name,
+            "last_name": banned_farmer.last_name,
+            "username": banned_farmer.username,
+            "email": banned_farmer.email,
+            "phone_number": banned_farmer.phone_number,
+        })
+    return jsonify(banned_users_list)
+
+@app.route('/admin/banned-buyers', methods=['GET'])
+@login_required
+def banned_buyers():
+    banned_users = User.query.filter_by(status='banned', role='buyer').all()
+    
+    banned_users_list = []
+    for banned_user in banned_users:
+        banned_buyer = Buyer.query.filter_by(email=banned_user.email).first()
+        banned_users_list.append({
+            "user_id": banned_user.user_id,
+            'role': 'buyer',
+            "first_name": banned_buyer.first_name,
+            "last_name": banned_buyer.last_name,
+            "username": banned_buyer.username,
+            "email": banned_buyer.email,
+            "phone_number": banned_buyer.phone_number,
+        })
+    return jsonify(banned_users_list)
+
 @app.route('/admin/approve-farmer/<int:farmer_id>', methods=['POST'])
 @login_required
 def approve_farmer(farmer_id):
@@ -212,6 +282,39 @@ def ban_farmer(farmer_id):
         db.session.commit()
         return jsonify({"message": "Farmer banned"})
     return jsonify({"message": "Farmer not found"}), 404
+
+@app.route('/admin/ban-buyer/<int:buyer_id>', methods=['POST'])
+@login_required
+def ban_buyer(buyer_id):
+    if current_user.role != 'admin':
+        return jsonify({"message": "Unauthorized"}), 403
+
+    buyer = Buyer.query.get(buyer_id)
+    email = buyer.email
+    user = User.query.filter_by(email=email).first()
+    if buyer:
+        buyer.status = "banned"
+        user.status = "banned"
+        db.session.commit()
+        return jsonify({"message": "Buyer banned"})
+    return jsonify({"message": "Buyer not found"}), 404
+
+@app.route('/admin/unban-user/<int:user_id>', methods=['POST'])
+@login_required
+def unban_user(user_id):
+
+    user = User.query.get(user_id)
+    user.status = "active"
+    db.session.commit()
+    if user.role == 'farmer':
+        farmer = Farmer.query.filter_by(email=user.email).first()
+        farmer.status = "approved"
+        db.session.commit()
+    elif user.role == 'buyer':
+        buyer = Buyer.query.filter_by(email=user.email).first()
+        buyer.status = "active"
+        db.session.commit()
+    return jsonify({"message": "User unbanned"}), 200
 
 @app.route('/register')
 def register():
@@ -302,7 +405,7 @@ def register_buyer_post():
 @app.route('/admin/buyers', methods=['GET'])
 @login_required
 def buyers():
-    buyers = Buyer.query.all()
+    buyers = Buyer.query.filter_by(status='active').all()
     
     buyer_list = [
         {

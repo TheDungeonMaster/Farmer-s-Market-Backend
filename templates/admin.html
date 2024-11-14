@@ -16,6 +16,30 @@
             font-size: 20px;
             font-weight: bold;
         }
+        .card-body {
+            display: flex;
+            align-items: center;  
+            justify-content: space-between;
+        }
+        .d-flex {
+            display: flex;
+            margin: 0px;
+            align-items: right;
+            max-width: 50%;
+        }
+        #pendingFarmersSearch, #buyersSearch, #farmersSearch {
+            display: flex;
+            margin: 0px;
+            max-width: 90%;
+            margin-right: 1rem;
+        }
+        #bannedSearch {
+            display: flex;
+            margin: 0px;
+            max-width: 70%;
+            margin-right: 1rem;
+        }
+        
     </style>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
@@ -44,7 +68,19 @@
         <div class="card mb-4">
             <div class="card-header">
                 Pending Farmer Registrations
-                <input type="text" id="pendingFarmersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderPendingFarmers()">
+                <div class='card-body'>
+                    <input type="text" id="pendingFarmersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderPendingFarmers()">
+                    <div class="d-flex">
+                        <select id="pendingFarmersRowCount" class="form-control form-control-sm mr-2" onchange="renderPendingFarmers()">
+                            <option value="0">Hide</option>
+                            <option value="5">5 rows</option>
+                            <option value="10" selected>10 rows</option>
+                            <option value="25">25 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -75,7 +111,18 @@
         <div class="card mb-4">
             <div class="card-header">
                 Active Farmers
-                <input type="text" id="farmersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderFarmersList()">
+                <div class="card-body">
+                    <input type="text" id="farmersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderFarmersList()">
+                    <div class="d-flex">
+                        <select id="farmersListRowCount" class="form-control form-control-sm mr-2" onchange="renderFarmersList()">
+                            <option value="5">5 rows</option>
+                            <option value="10" selected>10 rows</option>
+                            <option value="25">25 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -107,7 +154,19 @@
         <div class="card mb-4">
             <div class="card-header">
                 Registered Buyers
-                <input type="text" id="buyersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderBuyersList()">
+                <div class='card-body'>
+                    <input type="text" id="buyersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderBuyersList()">
+                    <div class="d-flex">
+                        <select id="buyersListRowCount" class="form-control form-control-sm mr-2" onchange="renderBuyersList()">
+                            <option value="0">Hide</option>
+                            <option value="5">5 rows</option>
+                            <option value="10" selected>10 rows</option>
+                            <option value="25">25 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -121,6 +180,7 @@
                                 <th>Username</th>
                                 <th>Email</th>
                                 <th>Phone Number</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="buyersList">
@@ -135,7 +195,57 @@
             </div>
         </div>
 
-        <!-- System Settings Section -->
+        <!-- Banned users section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                Banned Users
+                <div class='card-body'>
+                    <input type="text" id="bannedSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderBannedList()">
+                    <div class="d-flex">
+                        <select id="bannedListRowCount" class="form-control form-control-sm mr-2" onchange="renderBannedList()">
+                            <option value="0">Hide</option>
+                            <option value="5">5 rows</option>
+                            <option value="10" selected>10 rows</option>
+                            <option value="25">25 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                        </select>
+                        <select id="sectionSelect" class="form-control form-control-sm" onchange="changeSection('bannedUsers')">
+                            <option value="bannedUsers">All banned users</option>
+                            <option value="bannedFarmers">Banned farmers</option>
+                            <option value="bannedBuyers">Banned buyers</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Role</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Phone Number</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bannedList">
+                            <!-- Rows with buyers' data will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                    <div id="bannedPagination" class="pagination">
+                        <button onclick="changePage('bannedUsers', -1)" class="btn btn-primary btn-sm mr-2" id="bannedPrev">Previous</button>
+                        <button onclick="changePage('bannedUsers', 1)" class="btn btn-primary btn-sm" id="bannedNext">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Moderator Creation Section -->
         <div class="card mb-4">
             <div class="card-header">Create new admin account</div>
             <div class="card-body">
@@ -153,9 +263,21 @@
         let pendingFarmersPage = 0;
         let farmersPage = 0;
         let buyersPage = 0;
-        const pageSize = 5;
+        let bannedPage = 0;
+        let rowsPerPage = {
+            pendingFarmers: 10,
+            farmers: 10,
+            buyers: 10
+        };
+
+        function getRowCount(section) {
+            const rowCountSelect = document.getElementById(`${section}RowCount`);
+            return parseInt(rowCountSelect ? rowCountSelect.value : 10, 10);
+        }
 
         function renderPendingFarmers() {
+            const rowCount = getRowCount("pendingFarmers");
+            rowsPerPage.pendingFarmers = rowCount;
             $.ajax({
                 url: '/admin/pending-farmers',
                 method: 'GET',
@@ -171,8 +293,8 @@
         
                     const pendingFarmersTable = document.getElementById("pendingFarmers");
                     pendingFarmersTable.innerHTML = "";
-                    const start = pendingFarmersPage * pageSize;
-                    const end = start + pageSize;
+                    const start = pendingFarmersPage * rowCount;
+                    const end = start + rowCount;
                     const paginatedData = filteredData.slice(start, end);
         
                     paginatedData.forEach(farmer => {
@@ -191,7 +313,7 @@
                         pendingFarmersTable.innerHTML += row;
                     });
         
-                    document.getElementById("pendingFarmersPagination").style.display = filteredData.length > pageSize ? 'block' : 'none';
+                    document.getElementById("pendingFarmersPagination").style.display = (filteredData.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
                     document.getElementById("pendingFarmersPrev").disabled = pendingFarmersPage === 0;
                     document.getElementById("pendingFarmersNext").disabled = end >= filteredData.length;
                 },
@@ -202,6 +324,9 @@
         }
 
         function renderFarmersList() {
+            const rowCount = getRowCount("farmersList");
+            rowsPerPage.farmersList = rowCount;
+
             $.ajax({
                 url: '/admin/farmers',
                 method: 'GET',
@@ -217,8 +342,8 @@
                     
                     const farmersTable = document.getElementById("farmersList");
                     farmersTable.innerHTML = "";
-                    const start = farmersPage * pageSize;
-                    const end = start + pageSize;
+                    const start = farmersPage * rowCount;
+                    const end = start + rowCount;
                     const paginatedData = filteredData.slice(start, end);
                     paginatedData.forEach(approved_farmer => {
                         const row = `<tr>
@@ -242,7 +367,7 @@
                         </tr>`;
                         farmersTable.innerHTML += row;
                     });
-                    document.getElementById("farmersPagination").style.display = data.length > pageSize ? 'block' : 'none';
+                    document.getElementById("farmersPagination").style.display = (data.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
                     document.getElementById("farmersPrev").disabled = farmersPage === 0;
                     document.getElementById("farmersNext").disabled = end >= data.length;
                 }
@@ -250,6 +375,9 @@
         }
 
         function renderBuyersList() {
+            const rowCount = getRowCount("buyersList");
+            rowsPerPage.buyersList = rowCount;
+
             $.ajax({
                 url: '/admin/buyers',
                 method: 'GET',
@@ -266,8 +394,8 @@
 
                     const buyerTable = document.getElementById("buyersList");
                     buyerTable.innerHTML = "";
-                    const start = buyersPage * pageSize;
-                    const end = start + pageSize;
+                    const start = buyersPage * rowCount;
+                    const end = start + rowCount;
                     const paginatedData = filteredData.slice(start, end);
                     paginatedData.forEach(buyer => {
                         const row = `<tr>
@@ -278,19 +406,83 @@
                             <td>${buyer.username}</td>
                             <td>${buyer.email}</td>
                             <td>${buyer.phone_number}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                                        ...
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="#" onclick="writeToBuyer(${buyer.buyer_id})">Contact Buyer</a>
+                                        <a class="dropdown-item text-danger" href="#" onclick="banBuyer(${buyer.buyer_id})">Ban Buyer</a>
+                                    </div>
+                                </div>
+                            </td>
                         </tr>`;
                         buyerTable.innerHTML += row;
                     });
-                    document.getElementById("buyersPagination").style.display = data.length > pageSize ? 'block' : 'none';
+                    document.getElementById("buyersPagination").style.display = (data.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
                     document.getElementById("buyersPrev").disabled = buyersPage === 0;
                     document.getElementById("buyersNext").disabled = end >= data.length;
+
                 }
             });
         }
 
-        // Approve farmer
+        function renderBannedList() {
+            const rowCount = getRowCount("bannedList");
+            rowsPerPage.bannedList = rowCount;
+
+            $.ajax({
+                url: '/admin/banned-users',
+                method: 'GET',
+                success: function(data) {
+                    console.log(data);
+                    const searchQuery = document.getElementById("bannedSearch").value.toLowerCase();
+                    const filteredData = data.filter(bannedUser =>
+                        bannedUser.first_name.toLowerCase().includes(searchQuery) ||
+                        bannedUser.last_name.toLowerCase().includes(searchQuery) ||
+                        bannedUser.username.toLowerCase().includes(searchQuery) ||
+                        bannedUser.phone_number.includes(searchQuery) ||
+                        bannedUser.email.toLowerCase().includes(searchQuery) ||
+                        bannedUser.role.toLowerCase().includes(searchQuery)
+                    );
+
+                    const bannedTable = document.getElementById("bannedList");
+                    bannedTable.innerHTML = "";
+                    const start = bannedPage * rowCount;
+                    const end = start + rowCount;
+                    const paginatedData = filteredData.slice(start, end);
+                    paginatedData.forEach(bannedUser => {
+                        const row = `<tr>
+                            <td>${bannedUser.user_id}</td>
+                            <td>${bannedUser.role}</td>
+                            <td>${bannedUser.first_name}</td>
+                            <td>${bannedUser.last_name}</td>
+                            <td>${bannedUser.username}</td>
+                            <td>${bannedUser.email}</td>
+                            <td>${bannedUser.phone_number}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                                        ...
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item text-danger" href="#" onclick="unbanUser(${bannedUser.user_id})">Unban user</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                        bannedTable.innerHTML += row;
+                    });
+                    document.getElementById("bannedPagination").style.display = (data.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
+                    document.getElementById("bannedPrev").disabled = bannedPage === 0;
+                    document.getElementById("bannedNext").disabled = end >= data.length;
+
+                }
+            });
+        }
+
         function approveFarmer(farmer_id) {
-            // Add an AJAX call here to approve the farmer in the backend
             $.ajax({
                 url: '/admin/approve-farmer/' + farmer_id,
                 method: 'POST',
@@ -302,9 +494,7 @@
             });
         }
 
-        // Reject farmer
         function rejectFarmer(farmer_id) {
-            // Add an AJAX call here to reject the farmer in the backend
             $.ajax({
                 url: '/admin/reject-farmer/' + farmer_id,
                 method: 'POST',
@@ -325,6 +515,9 @@
             } else if (section === 'buyers') {
                 buyersPage = Math.max(0, buyersPage + increment);
                 renderBuyersList();
+            }  else if (section === 'bannedUsers') {
+                bannedPage = Math.max(0, bannedPage + increment);
+                renderBannedList();
             }
         }
 
@@ -337,9 +530,45 @@
                     success: function() {
                         alert('Farmer ' + farmer_id + ' has been banned.');
                         renderFarmersList(); // Refresh the list after banning
+                        renderBannedList();
                     },
                     error: function(error) {
                         console.error("Error banning farmer:", error);
+                    }
+                });
+            }
+        }
+
+        function banBuyer(buyer_id) {
+            if (confirm("Are you sure you want to ban this buyer?")) {
+                $.ajax({
+                    url: '/admin/ban-buyer/' + buyer_id,
+                    method: 'POST',
+                    success: function() {
+                        alert('Buyer ' + buyer_id + ' has been banned.');
+                        renderBuyersList();
+                        renderBannedList();
+                    },
+                    error: function(error) {
+                        console.error("Error banning buyer:", error);
+                    }
+                });
+            }
+        }
+
+        function unbanUser(user_id) {
+            if (confirm("Are you sure you want to unban this user?")) {
+                $.ajax({
+                    url: '/admin/unban-user/' + user_id,
+                    method: 'POST',
+                    success: function() {
+                        alert('User ' + user_id + ' has been unbanned.');
+                        renderBuyersList();
+                        renderBannedList();
+                        renderFarmersList();
+                    },
+                    error: function(error) {
+                        console.error("Error banning buyer:", error);
                     }
                 });
             }
@@ -349,6 +578,7 @@
         renderPendingFarmers();
         renderFarmersList()
         renderBuyersList();
+        renderBannedList();
     </script>
 </body>
 </html>
