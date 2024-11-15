@@ -127,17 +127,21 @@ def admin():
 def pending_farmers():
     pending_farmers = Farmer.query.filter_by(status='pending').all()
     
-    farmer_list = [
-        {
+    farmer_list = []
+    for farmer in pending_farmers:
+        farm = Farm.query.filter_by(farmer_id=farmer.farmer_id).first()
+        farmer_list.append({
             "farmer_id": farmer.farmer_id,
             "first_name": farmer.first_name,
             "last_name": farmer.last_name,
             "username": farmer.username,
             "phone_number": farmer.phone_number,
             "email": farmer.email,
-        }
-        for farmer in pending_farmers
-    ]
+            'farm_name': farm.farm_name,
+            'crop_type': farm.crop_type,
+            'farm_size': farm.farm_size,
+            'location': farm.location,
+        })
     return jsonify(farmer_list)
 
 @app.route('/admin/farmers', methods=['GET'])
@@ -145,17 +149,21 @@ def pending_farmers():
 def approved_farmers():
     approved_farmers = Farmer.query.filter_by(status='approved').all()
     
-    approved_farmers_list = [
-        {
+    approved_farmers_list = []
+    for approved_farmer in approved_farmers:
+        farm = Farm.query.filter_by(farmer_id=approved_farmer.farmer_id).first()
+        approved_farmers_list.append({
             "farmer_id": approved_farmer.farmer_id,
             "first_name": approved_farmer.first_name,
             "last_name": approved_farmer.last_name,
             "username": approved_farmer.username,
             "phone_number": approved_farmer.phone_number,
             "email": approved_farmer.email,
-        }
-        for approved_farmer in approved_farmers
-    ]
+            'farm_name': farm.farm_name,
+            'crop_type': farm.crop_type,
+            'farm_size': farm.farm_size,
+            'location': farm.location,
+        })
     return jsonify(approved_farmers_list)
 
 @app.route('/admin/banned-users', methods=['GET'])
@@ -339,6 +347,16 @@ def register_farmer_post():
     farm_size = request.form.get('farm_size')
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     
+    if username in [user.username for user in User.query.all()] and email in [user.email for user in User.query.all()]:
+        flash('Both username and email already exist', 'error')
+        return redirect(url_for('register_farmer'))
+    if email in [user.email for user in User.query.all()]:
+        flash('Email already exists')
+        return redirect(url_for('register_farmer'))
+    if username in [user.username for user in User.query.all()]:
+        flash('Username already exists')
+        return redirect(url_for('register_farmer'))
+    
     user = User(email=email, password=hashed_password, role='farmer', username = username)
     db.session.add(user)
     db.session.flush()
@@ -392,6 +410,16 @@ def register_buyer_post():
     password = request.form.get('password')
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     
+    if username in [user.username for user in User.query.all()] and email in [user.email for user in User.query.all()]:
+        flash('Both username and email already exist', 'error')
+        return redirect(url_for('register_buyer'))
+    if email in [user.email for user in User.query.all()]:
+        flash('Email already exists', 'error')
+        return redirect(url_for('register_buyer'))
+    if username in [user.username for user in User.query.all()]:
+        flash('Username already exists', 'error')
+        return redirect(url_for('register_buyer'))
+
     user = User(email=email, password=hashed_password, role='buyer', username = username)
     db.session.add(user)
     db.session.flush()
@@ -480,10 +508,12 @@ def api_register():
         return jsonify({"message": "Invalid role"}), 400
 
     email = data.get("email")
+    if User.query.filter_by(email=email).first():
+        return jsonify({"message": "Email already exists"}), 400
     password = data.get("password")
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     
-    user = User(email=email, password=hashed_password, role=role, username=username)
+    user = User(email=email, password=hashed_password, role=role, username=username, status='active')
     db.session.add(user)
     db.session.flush()
     

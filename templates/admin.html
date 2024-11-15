@@ -21,15 +21,15 @@
             align-items: center;  
             justify-content: space-between;
         }
-        .d-flex {
+        .row-options {
             display: flex;
-            margin: 0px;
+            margin: auto;
             align-items: right;
             max-width: 50%;
         }
         #pendingFarmersSearch, #buyersSearch, #farmersSearch {
             display: flex;
-            margin: 0px;
+            margin: auto;
             max-width: 90%;
             margin-right: 1rem;
         }
@@ -38,6 +38,10 @@
             margin: 0px;
             max-width: 70%;
             margin-right: 1rem;
+        }
+        .card {
+            overflow: auto;
+            white-space: nowrap; 
         }
         
     </style>
@@ -70,7 +74,7 @@
                 Pending Farmer Registrations
                 <div class='card-body'>
                     <input type="text" id="pendingFarmersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderPendingFarmers()">
-                    <div class="d-flex">
+                    <div class="row-options">
                         <select id="pendingFarmersRowCount" class="form-control form-control-sm mr-2" onchange="renderPendingFarmers()">
                             <option value="0">Hide</option>
                             <option value="5">5 rows</option>
@@ -90,8 +94,13 @@
                                 <th>ID</th>
                                 <th>First Name</th>
                                 <th>Last Name</th>
+                                <th>Username</th>
                                 <th>Phone Number</th>
                                 <th>Email</th>
+                                <th>Farm Name</th>
+                                <th>Crop Type</th>
+                                <th>Farm Size</th>
+                                <th>Location</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -113,7 +122,7 @@
                 Active Farmers
                 <div class="card-body">
                     <input type="text" id="farmersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderFarmersList()">
-                    <div class="d-flex">
+                    <div class="row-options">
                         <select id="farmersListRowCount" class="form-control form-control-sm mr-2" onchange="renderFarmersList()">
                             <option value="5">5 rows</option>
                             <option value="10" selected>10 rows</option>
@@ -135,6 +144,10 @@
                                 <th>Username</th>
                                 <th>Phone Number</th>
                                 <th>Email</th>
+                                <th>Farm Name</th>
+                                <th>Crop Type</th>
+                                <th>Farm Size</th>
+                                <th>Location</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -156,7 +169,7 @@
                 Registered Buyers
                 <div class='card-body'>
                     <input type="text" id="buyersSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderBuyersList()">
-                    <div class="d-flex">
+                    <div class="row-options">
                         <select id="buyersListRowCount" class="form-control form-control-sm mr-2" onchange="renderBuyersList()">
                             <option value="0">Hide</option>
                             <option value="5">5 rows</option>
@@ -201,7 +214,7 @@
                 Banned Users
                 <div class='card-body'>
                     <input type="text" id="bannedSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderBannedList()">
-                    <div class="d-flex">
+                    <div class="row-options">
                         <select id="bannedListRowCount" class="form-control form-control-sm mr-2" onchange="renderBannedList()">
                             <option value="0">Hide</option>
                             <option value="5">5 rows</option>
@@ -210,8 +223,8 @@
                             <option value="50">50 rows</option>
                             <option value="100">100 rows</option>
                         </select>
-                        <select id="sectionSelect" class="form-control form-control-sm" onchange="changeSection('bannedUsers')">
-                            <option value="bannedUsers">All banned users</option>
+                        <select id="sectionSelect" class="form-control form-control-sm" onchange="changeSection(this.value)">
+                            <option value="bannedList">All banned users</option>
                             <option value="bannedFarmers">Banned farmers</option>
                             <option value="bannedBuyers">Banned buyers</option>
                         </select>
@@ -234,7 +247,7 @@
                             </tr>
                         </thead>
                         <tbody id="bannedList">
-                            <!-- Rows with buyers' data will be dynamically populated here -->
+                            <!-- Rows with data will be dynamically populated here -->
                         </tbody>
                     </table>
                     <div id="bannedPagination" class="pagination">
@@ -305,6 +318,10 @@
                             <td>${farmer.username}</td>
                             <td>${farmer.phone_number}</td>
                             <td>${farmer.email}</td>
+                            <td>${farmer.farm_name}</td>
+                            <td>${farmer.crop_type}</td>
+                            <td>${farmer.farm_size}</td>
+                            <td>${farmer.location}</td>
                             <td>
                                 <button class="btn btn-success btn-sm" onclick="approveFarmer(${farmer.farmer_id})">Approve</button>
                                 <button class="btn btn-danger btn-sm" onclick="rejectFarmer(${farmer.farmer_id})">Reject</button>
@@ -353,6 +370,10 @@
                             <td>${approved_farmer.username}</td>
                             <td>${approved_farmer.phone_number}</td>
                             <td>${approved_farmer.email}</td>
+                            <td>${approved_farmer.farm_name}</td>
+                            <td>${approved_farmer.crop_type}</td>
+                            <td>${approved_farmer.farm_size}</td>
+                            <td>${approved_farmer.location}</td>
                             <td>
                                 <div class="dropdown">
                                     <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
@@ -434,6 +455,114 @@
 
             $.ajax({
                 url: '/admin/banned-users',
+                method: 'GET',
+                success: function(data) {
+                    console.log(data);
+                    const searchQuery = document.getElementById("bannedSearch").value.toLowerCase();
+                    const filteredData = data.filter(bannedUser =>
+                        bannedUser.first_name.toLowerCase().includes(searchQuery) ||
+                        bannedUser.last_name.toLowerCase().includes(searchQuery) ||
+                        bannedUser.username.toLowerCase().includes(searchQuery) ||
+                        bannedUser.phone_number.includes(searchQuery) ||
+                        bannedUser.email.toLowerCase().includes(searchQuery) ||
+                        bannedUser.role.toLowerCase().includes(searchQuery)
+                    );
+
+                    const bannedTable = document.getElementById("bannedList");
+                    bannedTable.innerHTML = "";
+                    const start = bannedPage * rowCount;
+                    const end = start + rowCount;
+                    const paginatedData = filteredData.slice(start, end);
+                    paginatedData.forEach(bannedUser => {
+                        const row = `<tr>
+                            <td>${bannedUser.user_id}</td>
+                            <td>${bannedUser.role}</td>
+                            <td>${bannedUser.first_name}</td>
+                            <td>${bannedUser.last_name}</td>
+                            <td>${bannedUser.username}</td>
+                            <td>${bannedUser.email}</td>
+                            <td>${bannedUser.phone_number}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                                        ...
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item text-danger" href="#" onclick="unbanUser(${bannedUser.user_id})">Unban user</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                        bannedTable.innerHTML += row;
+                    });
+                    document.getElementById("bannedPagination").style.display = (data.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
+                    document.getElementById("bannedPrev").disabled = bannedPage === 0;
+                    document.getElementById("bannedNext").disabled = end >= data.length;
+
+                }
+            });
+        }
+
+        function renderBannedBuyersList() {
+            const rowCount = getRowCount("bannedList");
+            rowsPerPage.bannedList = rowCount;
+
+            $.ajax({
+                url: '/admin/banned-buyers',
+                method: 'GET',
+                success: function(data) {
+                    console.log(data);
+                    const searchQuery = document.getElementById("bannedSearch").value.toLowerCase();
+                    const filteredData = data.filter(bannedUser =>
+                        bannedUser.first_name.toLowerCase().includes(searchQuery) ||
+                        bannedUser.last_name.toLowerCase().includes(searchQuery) ||
+                        bannedUser.username.toLowerCase().includes(searchQuery) ||
+                        bannedUser.phone_number.includes(searchQuery) ||
+                        bannedUser.email.toLowerCase().includes(searchQuery) ||
+                        bannedUser.role.toLowerCase().includes(searchQuery)
+                    );
+
+                    const bannedTable = document.getElementById("bannedList");
+                    bannedTable.innerHTML = "";
+                    const start = bannedPage * rowCount;
+                    const end = start + rowCount;
+                    const paginatedData = filteredData.slice(start, end);
+                    paginatedData.forEach(bannedUser => {
+                        const row = `<tr>
+                            <td>${bannedUser.user_id}</td>
+                            <td>${bannedUser.role}</td>
+                            <td>${bannedUser.first_name}</td>
+                            <td>${bannedUser.last_name}</td>
+                            <td>${bannedUser.username}</td>
+                            <td>${bannedUser.email}</td>
+                            <td>${bannedUser.phone_number}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                                        ...
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item text-danger" href="#" onclick="unbanUser(${bannedUser.user_id})">Unban user</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                        bannedTable.innerHTML += row;
+                    });
+                    document.getElementById("bannedPagination").style.display = (data.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
+                    document.getElementById("bannedPrev").disabled = bannedPage === 0;
+                    document.getElementById("bannedNext").disabled = end >= data.length;
+
+                }
+            });
+        }
+
+        function renderBannedFarmersList() {
+            const rowCount = getRowCount("bannedList");
+            rowsPerPage.bannedList = rowCount;
+
+            $.ajax({
+                url: '/admin/banned-farmers',
                 method: 'GET',
                 success: function(data) {
                     console.log(data);
@@ -571,6 +700,17 @@
                         console.error("Error banning buyer:", error);
                     }
                 });
+            }
+        }
+
+        function changeSection(newSection) {
+            //console.log(newSection)
+            if (newSection === 'bannedList') {
+                renderBannedList();
+            } else if (newSection === 'bannedBuyers') {
+                renderBannedBuyersList();
+            } else if (newSection === 'bannedFarmers') {
+                renderBannedFarmersList();
             }
         }
 
