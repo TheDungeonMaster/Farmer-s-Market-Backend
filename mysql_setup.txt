@@ -1,0 +1,1 @@
+vozich:mydatabase1336@vozich.mysql.pythonanywhere-services.com/vozich$farmermarketdb

@@ -32,13 +32,6 @@ db = SQLAlchemy(app)
 #                     password = "labkafarmer01",
 #                     database ="farmermarketdb")
 
-db_config = {
-    'host': 'farmer-market.cheqy8c0cs83.eu-west-2.rds.amazonaws.com',
-    'user': 'admin',
-    'password': 'labkafarmer01',
-    'database': 'farmermarketdb'
-}
-
 class Product(db.Model):
     __tablename__ = 'product'
     product_id= db.Column(db.Integer, primary_key=True, autoincrement=True)
