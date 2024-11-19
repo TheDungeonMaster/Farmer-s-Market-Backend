@@ -442,7 +442,7 @@ def register_farmer_post():
     db.session.add(farm)
     db.session.commit()
     
-    return redirect(url_for('farmer_dashboard'))
+    return redirect(url_for('login'))
 
 @app.route('/farmer/farm-info/<int:farmer_id>', methods=['GET'])
 @login_required
@@ -501,7 +501,7 @@ def register_buyer_post():
     db.session.add(buyer)
     db.session.commit()
     
-    return jsonify({"message": "Buyer registered successfully"})
+    return redirect(url_for('login'))
 
 @app.route('/buyers', methods=['GET'])
 @login_required
