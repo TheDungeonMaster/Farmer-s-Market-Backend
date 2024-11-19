@@ -3,27 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ table_name }} Data</title>
+    <title>Products</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .products-container {
+            width: 90%;
+            max-width: 600px;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .products-container h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        .product-table th, .product-table td {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .product-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #333;
+        }
+        .product-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .out-of-stock {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ table_name }} Table</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                {% for column in rows[0].keys() %}
-                    <th>{{ column }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
+
+<div class="products-container">
+    <h2>Available Products</h2>
+    
+    {% if products %}
+        <table class="product-table">
+            <thead>
                 <tr>
-                    {% for value in row.values() %}
-                        <td>{{ value }}</td>
-                    {% endfor %}
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>{{ product.title }}</td>
+                    <td>{{ product.category }}</td>
+                    <td>${{ product.price }}</td>
+                    <td>
+                        {% if product.quantity == 0 %}
+                            <span class="out-of-stock">Out of Stock</span>
+                        {% else %}
+                            {{ product.quantity }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No products available at the moment.</p>
+    {% endif %}
+</div>
+
 </body>
 </html>

@@ -1,4 +1,7 @@
 #Imports
+from itertools import product
+import math
+import random
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
@@ -6,9 +9,8 @@ from sqlalchemy.orm import sessionmaker
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_scss import Scss
 import pymysql
-import mysql.connector
+import mysql.connector 
 import pyotp
 import os
 
@@ -36,6 +38,17 @@ db_config = {
     'password': 'labkafarmer01',
     'database': 'farmermarketdb'
 }
+
+class Product(db.Model):
+    __tablename__ = 'product'
+    product_id= db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(50), unique=True, nullable=False)
+    description=db.Column(db.String(50), nullable=False)
+    category=db.Column(db.String(15), nullable=False)
+    organic_certification=db.Column(db.Integer, nullable=False)
+    quantity=db.Column(db.Integer, nullable=False)
+    price=db.Column(db.Integer, nullable=False)
+    farm_name = db.Column(db.String(50))
 
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
@@ -95,14 +108,8 @@ def index():
 
 @app.route('/products')
 def products():
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary = True)
-    query = 'SELECT * FROM product'
-    cursor.execute(query)
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return render_template('products.html', table_name = 'Products', rows=rows)
+    products = Product.query.all()
+    return render_template('products.html', products = products)
 
 #ADMINS
 @app.route('/setup-admin')
@@ -442,6 +449,7 @@ def register_farmer_post():
     db.session.add(farm)
     db.session.commit()
     
+    login_user(user)
     return redirect(url_for('login'))
 
 @app.route('/farmer/farm-info/<int:farmer_id>', methods=['GET'])
@@ -464,8 +472,57 @@ def get_farm_info(farmer_id):
 def farmer_dashboard(farmer_id):
     
     farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    products = Product.query.filter_by(farm_name=farm.farm_name)
+    low_stock_products = [product for product in products if product.quantity < 5]
+    return render_template('farmer_dashboard.html',farm=farm, farmer_id=farmer_id, products=products, low_stock_products=low_stock_products)
 
-    return render_template('farmer_dashboard.html', farm=farm, products=products)
+@app.route('/farmer/farmer_dashboard/<int:farmer_id>', methods=['POST'])
+@login_required
+def delete_product(farmer_id):
+    product_id = request.form.get('product_id')
+    product = Product.query.get(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
+
+@app.route('/farmer/<int:farmer_id>/edit-product/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+def edit_product(farmer_id, product_id):
+    product = Product.query.get(product_id)
+    if request.method == 'POST':
+        # Update product details with form data
+        product.title = request.form.get('title')
+        product.category = request.form.get('category')
+        product.price = request.form.get('price')
+        product.quantity = request.form.get('quantity')
+        product.description = request.form.get('description')
+        product.organic_certification = request.form.get('organic_certification')
+            
+        db.session.commit()
+        return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
+        
+    return render_template('edit_product.html', product=product, farmer_id=farmer_id)
+    
+@app.route('/farmer/<int:farmer_id>/add-product', methods=['GET', 'POST'])
+@login_required
+def add_product(farmer_id):
+    farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    farm_name = farm.farm_name
+    if request.method == 'POST':
+        title = request.form.get('title')
+        category = request.form.get('category')
+        price = request.form.get('price')
+        quantity = request.form.get('quantity')
+        description = request.form.get('description')
+        organic_certification = request.form.get('organic_certification')
+        
+        product = Product(title=title, description=description, category=category,organic_certification=organic_certification, quantity=quantity, price=price, farm_name = farm_name)
+        db.session.add(product)
+        db.session.commit()
+
+        return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
+    
+    return render_template('add_product.html', farmer_id=farmer_id, products=products)
 
 #BUYERS        
 @app.route('/register/buyer')
@@ -553,12 +610,10 @@ def login_post():
             return redirect(url_for('admin'))
         elif user.role == 'farmer':
             login_user(user)
-            conn = mysql.connector.connect(**db_config)
-            cursor = conn.cursor(dictionary = True)
-            query = f"SELECT farmer_id FROM farmer WHERE farmer.email = '{email}'"
-            cursor.execute(query)
-            farmer_id = cursor.fetchone()['farmer_id']
-            cursor.close()
+            farmer = Farmer.query.filter_by(email=email_or_username).first()
+            if not farmer:
+                farmer = Farmer.query.filter_by(username=email_or_username).first()
+            farmer_id = farmer.farmer_id
             return redirect(url_for('farmer_dashboard', farmer_id = farmer_id))
         elif user.role == 'buyer':
             login_user(user)
@@ -646,3 +701,4 @@ def api_login():
 #Main
 if __name__ in '__main__':
         app.run(debug = True)
+
