@@ -260,13 +260,48 @@
 
         <!-- Moderator Creation Section -->
         <div class="card mb-4">
-            <div class="card-header">Create new admin account</div>
+            <div class="card-header">Create New Moderator Account</div>
             <div class="card-body">
-                <p>You can create new admin/moderator accounts here.</p>
-                <button class="btn btn-primary">Create new account</button>
+                <form id="createModeratorForm">
+                    <div class="form-group">
+                        <label for="moderatorEmail">Email</label>
+                        <input type="email" class="form-control" id="moderatorEmail" placeholder="Enter email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="moderatorUsername">Username</label>
+                        <input type="text" class="form-control" id="moderatorUsername" placeholder="Enter username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="moderatorPassword">Password</label>
+                        <input type="password" class="form-control" id="moderatorPassword" placeholder="Enter password" required>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="createModerator()">Create Moderator</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">List of Moderators</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Username</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="moderatorsList">
+                            <!-- Rows will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
     <!-- JavaScript for handling approve/reject actions -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -292,7 +327,7 @@
             const rowCount = getRowCount("pendingFarmers");
             rowsPerPage.pendingFarmers = rowCount;
             $.ajax({
-                url: '/admin/pending-farmers',
+                url: '/pending-farmers',
                 method: 'GET',
                 success: function(data) {
                     const searchQuery = document.getElementById("pendingFarmersSearch").value.toLowerCase();
@@ -345,7 +380,7 @@
             rowsPerPage.farmersList = rowCount;
 
             $.ajax({
-                url: '/admin/farmers',
+                url: '/farmers',
                 method: 'GET',
                 success: function(data) {
                     const searchQuery = document.getElementById("farmersSearch").value.toLowerCase();
@@ -400,7 +435,7 @@
             rowsPerPage.buyersList = rowCount;
 
             $.ajax({
-                url: '/admin/buyers',
+                url: '/buyers',
                 method: 'GET',
                 success: function(data) {
                     const searchQuery = document.getElementById("buyersSearch").value.toLowerCase();
@@ -454,7 +489,7 @@
             rowsPerPage.bannedList = rowCount;
 
             $.ajax({
-                url: '/admin/banned-users',
+                url: '/banned-users',
                 method: 'GET',
                 success: function(data) {
                     console.log(data);
@@ -489,6 +524,7 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item text-danger" href="#" onclick="unbanUser(${bannedUser.user_id})">Unban user</a>
+                                        <a class="dropdown-item text-danger" href="#" onclick="deleteUser(${bannedUser.user_id})">Delete User</a>
                                     </div>
                                 </div>
                             </td>
@@ -508,7 +544,7 @@
             rowsPerPage.bannedList = rowCount;
 
             $.ajax({
-                url: '/admin/banned-buyers',
+                url: '/banned-buyers',
                 method: 'GET',
                 success: function(data) {
                     console.log(data);
@@ -542,7 +578,8 @@
                                         ...
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item text-danger" href="#" onclick="unbanUser(${bannedUser.user_id})">Unban user</a>
+                                        <a class="dropdown-item text-danger" href="#" onclick="unbanUser(${bannedUser.user_id})">Unban User</a>
+                                        <a class="dropdown-item text-danger" href="#" onclick="deleteUser(${bannedUser.user_id})">Delete User</a>
                                     </div>
                                 </div>
                             </td>
@@ -562,7 +599,7 @@
             rowsPerPage.bannedList = rowCount;
 
             $.ajax({
-                url: '/admin/banned-farmers',
+                url: '/banned-farmers',
                 method: 'GET',
                 success: function(data) {
                     console.log(data);
@@ -597,6 +634,7 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item text-danger" href="#" onclick="unbanUser(${bannedUser.user_id})">Unban user</a>
+                                        <a class="dropdown-item text-danger" href="#" onclick="deleteUser(${bannedUser.user_id})">Delete User</a>
                                     </div>
                                 </div>
                             </td>
@@ -613,7 +651,7 @@
 
         function approveFarmer(farmer_id) {
             $.ajax({
-                url: '/admin/approve-farmer/' + farmer_id,
+                url: '/approve-farmer/' + farmer_id,
                 method: 'POST',
                 success: function() {
                     alert('Farmer ' + farmer_id + ' approved');
@@ -625,10 +663,10 @@
 
         function rejectFarmer(farmer_id) {
             $.ajax({
-                url: '/admin/reject-farmer/' + farmer_id,
+                url: '/reject-farmer/' + farmer_id,
                 method: 'POST',
                 success: function() {
-                    alert('Farmer' + farmer_id + 'rejected');
+                    alert('Farmer ' + farmer_id + ' rejected');
                     renderPendingFarmers();
                 }
             });
@@ -654,7 +692,7 @@
             // Confirm ban action and send request to backend
             if (confirm("Are you sure you want to ban this farmer?")) {
                 $.ajax({
-                    url: '/admin/ban-farmer/' + farmer_id,
+                    url: '/ban-farmer/' + farmer_id,
                     method: 'POST',
                     success: function() {
                         alert('Farmer ' + farmer_id + ' has been banned.');
@@ -671,7 +709,7 @@
         function banBuyer(buyer_id) {
             if (confirm("Are you sure you want to ban this buyer?")) {
                 $.ajax({
-                    url: '/admin/ban-buyer/' + buyer_id,
+                    url: '/ban-buyer/' + buyer_id,
                     method: 'POST',
                     success: function() {
                         alert('Buyer ' + buyer_id + ' has been banned.');
@@ -688,7 +726,7 @@
         function unbanUser(user_id) {
             if (confirm("Are you sure you want to unban this user?")) {
                 $.ajax({
-                    url: '/admin/unban-user/' + user_id,
+                    url: '/unban-user/' + user_id,
                     method: 'POST',
                     success: function() {
                         alert('User ' + user_id + ' has been unbanned.');
@@ -714,11 +752,78 @@
             }
         }
 
+        function createModerator() {
+            const email = document.getElementById('moderatorEmail').value;
+            const username = document.getElementById('moderatorUsername').value;
+            const password = document.getElementById('moderatorPassword').value;
+    
+            fetch('/admin/create-moderator', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    renderModerators();
+                    document.getElementById('createModeratorForm').reset();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    
+        function renderModerators() {
+            fetch('/admin/moderators')
+                .then(response => response.json())
+                .then(data => {
+                    const moderatorsList = document.getElementById('moderatorsList');
+                    moderatorsList.innerHTML = '';
+                    data.forEach(mod => {
+                        moderatorsList.innerHTML += `<tr>
+                            <td>${mod.user_id}</td>
+                            <td>${mod.email}</td>
+                            <td>${mod.username}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown">
+                                        ...
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item text-danger" href="#" onclick="deleteUser(${mod.user_id})">Delete Moderator</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function deleteUser(user_id) {
+            if (confirm("Are you sure you want to delete this user?")) {
+                $.ajax({
+                    url: '/delete-user/' + user_id,
+                    method: 'DELETE',
+                    success: function() {
+                        alert('User ' + user_id + ' has been deleted.');
+                        renderBuyersList();
+                        renderFarmersList();
+                        renderModerators();
+                    },
+                    error: function(error) {
+                        console.error("Error deleting user:", error);
+                    }
+                });
+            }
+        }
+
         // Initial render of lists
         renderPendingFarmers();
         renderFarmersList()
         renderBuyersList();
         renderBannedList();
+        renderModerators();
     </script>
 </body>
 </html>

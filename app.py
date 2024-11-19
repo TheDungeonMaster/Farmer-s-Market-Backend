@@ -118,13 +118,41 @@ def setup_admin():
 @app.route('/admin')
 @login_required
 def admin():
+    print(current_user.role)
     if current_user.email == 'admin@mail.com':
         return render_template('admin.html')
+    else:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
     return render_template('moderator.html')
 
-@app.route('/admin/pending-farmers', methods=['GET'])
+@app.route('/moderator', methods=['GET'])
+@login_required
+def moderator():
+    print(current_user.role)
+    return render_template('moderator.html')
+
+@app.route('/delete-user/<int:user_id>', methods=['DELETE'])
+@login_required
+def delete_user(user_id):
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    user = User.query.get(user_id)
+    if user.role == 'buyer':
+        buyer = Buyer.query.filter_by(email=user.email).first()
+        db.session.delete(buyer)
+    elif user.role == 'farmer':
+        farmer = Farmer.query.filter_by(email=user.email).first()
+        db.session.delete(farmer)
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": "User deleted"}), 200
+
+@app.route('/pending-farmers', methods=['GET'])
 @login_required
 def pending_farmers():
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
     pending_farmers = Farmer.query.filter_by(status='pending').all()
     
     farmer_list = []
@@ -144,9 +172,11 @@ def pending_farmers():
         })
     return jsonify(farmer_list)
 
-@app.route('/admin/farmers', methods=['GET'])
+@app.route('/farmers', methods=['GET'])
 @login_required
 def approved_farmers():
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
     approved_farmers = Farmer.query.filter_by(status='approved').all()
     
     approved_farmers_list = []
@@ -166,9 +196,11 @@ def approved_farmers():
         })
     return jsonify(approved_farmers_list)
 
-@app.route('/admin/banned-users', methods=['GET'])
+@app.route('/banned-users', methods=['GET'])
 @login_required
 def banned_users():
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
     banned_users = User.query.filter_by(status='banned').all()
     
     banned_users_list = []
@@ -197,14 +229,16 @@ def banned_users():
         })
     return jsonify(banned_users_list)
 
-@app.route('/admin/banned-farmers', methods=['GET'])
+@app.route('/banned-farmers', methods=['GET'])
 @login_required
 def banned_farmers():
-    banned_users = User.query.filter_by(status='banned', role='farmer').all()
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    banned_users = User.query.filter_by(status = 'banned', role = 'farmer').all()
     
     banned_users_list = []
     for banned_user in banned_users:
-        banned_farmer = Farmer.query.filter_by(email=banned_user.email).first()
+        banned_farmer = Farmer.query.filter(_or(Farmer.status == 'banned', Farmer.status == 'rejected'), email=banned_user.email).first()
         banned_users_list.append({
             "user_id": banned_user.user_id,
             'role': 'farmer',
@@ -216,9 +250,11 @@ def banned_farmers():
         })
     return jsonify(banned_users_list)
 
-@app.route('/admin/banned-buyers', methods=['GET'])
+@app.route('/banned-buyers', methods=['GET'])
 @login_required
 def banned_buyers():
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
     banned_users = User.query.filter_by(status='banned', role='buyer').all()
     
     banned_users_list = []
@@ -235,10 +271,10 @@ def banned_buyers():
         })
     return jsonify(banned_users_list)
 
-@app.route('/admin/approve-farmer/<int:farmer_id>', methods=['POST'])
+@app.route('/approve-farmer/<int:farmer_id>', methods=['POST'])
 @login_required
 def approve_farmer(farmer_id):
-    if current_user.role != 'admin':
+    if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"message": "Unauthorized"}), 403
 
     farmer = Farmer.query.get(farmer_id)
@@ -251,18 +287,20 @@ def approve_farmer(farmer_id):
         # msg.body = 'Your farmer account has been approved and is now active.'
         # mail.send(msg)
 
-        return redirect(url_for('admin'))
+        return jsonify({"message": "Farmer approved"}), 200
     return jsonify({"message": "Farmer not found"}), 404
 
-@app.route('/admin/reject-farmer/<int:farmer_id>', methods=['POST'])
+@app.route('/reject-farmer/<int:farmer_id>', methods=['POST'])
 @login_required
 def reject_farmer(farmer_id):
-    if current_user.role != 'admin':
+    if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"message": "Unauthorized"}), 403
 
     farmer = Farmer.query.get(farmer_id)
     if farmer:
         farmer.status = "rejected"
+        user = User.query.filter_by(email=farmer.email).first()
+        user.status = 'banned'
         db.session.commit()
 
         # Optionally, send a rejection notification email
@@ -272,13 +310,13 @@ def reject_farmer(farmer_id):
         # mail.send(msg)
 
         # return jsonify({"message": "Farmer rejected"})
-        return redirect(url_for('admin'))
+        return jsonify({"message": "Farmer rejected"}), 200
     return jsonify({"message": "Farmer not found"}), 404
 
-@app.route('/admin/ban-farmer/<int:farmer_id>', methods=['POST'])
+@app.route('/ban-farmer/<int:farmer_id>', methods=['POST'])
 @login_required
 def ban_farmer(farmer_id):
-    if current_user.role != 'admin':
+    if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"message": "Unauthorized"}), 403
 
     farmer = Farmer.query.get(farmer_id)
@@ -291,10 +329,10 @@ def ban_farmer(farmer_id):
         return jsonify({"message": "Farmer banned"})
     return jsonify({"message": "Farmer not found"}), 404
 
-@app.route('/admin/ban-buyer/<int:buyer_id>', methods=['POST'])
+@app.route('/ban-buyer/<int:buyer_id>', methods=['POST'])
 @login_required
 def ban_buyer(buyer_id):
-    if current_user.role != 'admin':
+    if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"message": "Unauthorized"}), 403
 
     buyer = Buyer.query.get(buyer_id)
@@ -307,10 +345,12 @@ def ban_buyer(buyer_id):
         return jsonify({"message": "Buyer banned"})
     return jsonify({"message": "Buyer not found"}), 404
 
-@app.route('/admin/unban-user/<int:user_id>', methods=['POST'])
+@app.route('/unban-user/<int:user_id>', methods=['POST'])
 @login_required
 def unban_user(user_id):
-
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    
     user = User.query.get(user_id)
     user.status = "active"
     db.session.commit()
@@ -323,6 +363,39 @@ def unban_user(user_id):
         buyer.status = "active"
         db.session.commit()
     return jsonify({"message": "User unbanned"}), 200
+
+@app.route('/admin/create-moderator', methods=['POST'])
+@login_required
+def create_moderator():
+    if current_user.role != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    data = request.get_json()
+    email = data.get('email')
+    username = data.get('username')
+    password = data.get('password')
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"success": False, "message": "Email already exists"}), 400
+    if User.query.filter_by(username=username).first():
+        return jsonify({"success": False, "message": "Username already exists"}), 400
+
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    moderator = User(email=email, username=username, password=hashed_password, role='moderator', status = 'active')
+    db.session.add(moderator)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Moderator created successfully"})
+
+@app.route('/admin/moderators', methods=['GET'])
+@login_required
+def get_moderators():
+    if current_user.role != 'admin':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    moderators = User.query.filter_by(role='moderator').all()
+    moderators_list = [{"user_id": mod.user_id, "email": mod.email, "username": mod.username} for mod in moderators]
+    return jsonify(moderators_list)
 
 @app.route('/register')
 def register():
@@ -430,9 +503,11 @@ def register_buyer_post():
     
     return jsonify({"message": "Buyer registered successfully"})
 
-@app.route('/admin/buyers', methods=['GET'])
+@app.route('/buyers', methods=['GET'])
 @login_required
 def buyers():
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
     buyers = Buyer.query.filter_by(status='active').all()
     
     buyer_list = [
@@ -488,6 +563,9 @@ def login_post():
         elif user.role == 'buyer':
             login_user(user)
             return redirect(url_for('products'))
+        elif user.role == 'moderator':
+            login_user(user)
+            return redirect(url_for('moderator'))
     flash('Invalid credentials!', 'error')
     return redirect(url_for('login'))
 
