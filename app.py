@@ -677,10 +677,9 @@ def api_login():
     data = request.get_json()
     email_or_username = data.get("email_or_username")
     password = data.get("password")
-    username = data.get("username")
     
     user = User.query.filter_by(email=email_or_username).first()
-    if not user and username:
+    if not user:
         user = User.query.filter_by(username=email_or_username).first()
     
     if user and check_password_hash(user.password, password):
@@ -690,8 +689,78 @@ def api_login():
         return jsonify(response), 200
     else:
         return jsonify({"message": "Invalid credentials"}), 401
+    
+@app.route('/api/products', methods=['GET'])
+def api_products():
+    products = Product.query.all()
+    product_list = []
+    for product in products:
+        product_list.append({
+            "product_id": product.product_id,
+            "title": product.title,
+            "description": product.description,
+            "category": product.category,
+            "organic_certification": product.organic_certification,
+            "quantity": product.quantity,
+            'price': product.price,
+            'farm_name': product.farm_name,
+        })
+    return jsonify(product_list)
+
+#API FOR ADDING PRODUCT. PASS FARMER ID ALONG WITH THE DETAILS
+@app.route('/api/add-product', methods=['POST'])
+def api_add_product():
+    data = request.get_json()
+    farmer_id = data.get("farmer_id")
+    farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    farm_name = farm.farm_name
+    
+    title = data.get("title")
+    description = data.get("description")
+    category = data.get("category")
+    organic_certification = data.get("organic_certification")
+    quantity = data.get("quantity")
+    price = data.get("price")
+    farm_name = data.get("farm_name")
+    
+    product = Product(title=title, description=description, category=category,organic_certification=organic_certification, quantity=quantity, price=price, farm_name = farm_name)
+    db.session.add(product)
+    db.session.commit()
         
+    return jsonify({"message": "Product added successfully"}), 201
+
+#API FOR EDITING PRODUCT. PASS FARMER ID AND PRODUCT ID ALONG WITH THE CHANGES
+@app.route('/api/edit-product', methods=['POST'])
+@login_required
+def api_edit_product():
+    data = request.get_json()
+    farmer_id = data.get("farmer_id")
+    product_id = data.get("product_id")
+    
+    product = Product.query.get(product_id)
+    
+    product.title = request.form.get('title')
+    product.category = request.form.get('category')
+    product.price = request.form.get('price')
+    product.quantity = request.form.get('quantity')
+    product.description = request.form.get('description')
+    product.organic_certification = request.form.get('organic_certification')
+        
+    db.session.commit()
+
+    return jsonify({"message": "Product updated successfully"}), 200
+
+@app.route('/api/delete-product', methods=['POST'])
+@login_required
+def api_delete_product():
+    data = request.get_json()
+    farmer_id = data.get("farmer_id")
+    product_id = data.get("product_id")
+    product = Product.query.get(product_id)
+    db.session.delete(product)
+    db.session.commit()
+    return jsonify({"message": "Product deleted successfully"}), 200
+    
 #Main
 if __name__ in '__main__':
         app.run(debug = True)
-
