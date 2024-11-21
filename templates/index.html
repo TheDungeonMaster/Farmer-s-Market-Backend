@@ -5,59 +5,255 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Farmer's Market</title>
     <style>
+        /* CSS Variables for a consistent theme */
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2B8C44;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #EFF299;
+            --white: #FFFFFF;
+        }
+
+        /* General Styling */
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
+        }
+
+        h1, h5 {
+            color: var(--primary-color);
+        }
+
+        p {
+            color: var(--text-color-light);
+        }
+
+        /* Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1rem;
+            background-color: var(--secondary-color);
+        }
+
+        .navbar a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1.25rem;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        /* Welcome Section */
+        .welcome-section {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f3f3f3;
-            color: #333;
+            height: 50vh;
             text-align: center;
+            background-color: var(--background-light);
+            color: var(--text-color-dark);
         }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: #4CAF50;
-        }
-        p {
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-            color: #666;
-        }
-        .button-container {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+
         .button-container a {
             display: inline-block;
             padding: 0.75rem 1.5rem;
             font-size: 1rem;
             text-decoration: none;
-            color: white;
-            background-color: #4CAF50;
+            color: var(--white);
+            background-color: var(--primary-color);
             border-radius: 5px;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
             font-weight: bold;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .button-container a:hover {
             background-color: #45a049;
+            transform: translateY(-3px);
+        }
+
+        /* Categories Section */
+        .categories-container {
+            background-color: var(--primary-color);
+            padding: 2rem 0;
+        }
+
+        .categories {
+            display: flex;
+            justify-content: space-evenly;
+            max-width: 90%;
+            margin: auto;
+            flex-wrap: wrap;
+        }
+
+        .category-button-container a {
+            display: inline-block;
+            padding: 2rem;
+            font-size: 1.25rem;
+            text-decoration: none;
+            color: var(--primary-color);
+            background-color: var(--white);
+            border-radius: 10px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-button-container a:hover {
+            background-color: var(--hover-highlight);
+            transform: translateY(-3px);
+        }
+
+        /* Search Bar */
+        .mr-sm-2 {
+            padding: 6px;
+            border: none;
+            margin-right: 16px;
+            font-size: 17px;
+        }
+
+        .btn-outline-success {
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 0.5rem 1rem;
+            background-color: transparent;
+            cursor: pointer;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .btn-outline-success:hover {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .nav-item {
+            list-style-type: none;
+        }
+
+        .product-container {
+            padding: 2rem;
+            background-color: var(--white);
+        }
+
+        .product-container .card {
+            background-color: var(--white);
+            border: 1px solid var(--shadow-light);
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px var(--shadow-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .product-container .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-body {
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .card-text {
+            margin: 0.5rem 0;
+            color: var(--text-color-dark);
+        }
+
+        .card-text strong {
+            color: var(--secondary-color);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .categories {
+                flex-direction: column;
+            }
+
+            .category-button-container a {
+                width: 90%;
+                margin-bottom: 1rem;
+                text-align: center;
+            }
+
+            .product-container .row {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-
-    <h1>Welcome to the Farmer's Market</h1>
-    <p>Your place to shop fresh, local produce and sell your harvest.</p>
-
-    <div class="button-container">
-        <a href="/register">Register</a>
-        <a href="/login">Login</a>
+    <nav class="navbar nav-container">
+        <a class="navbar-brand" href="#">Online Farmer Market</a>
+        <div>
+            <a class="nav-link" href="/login">Login</a>
+        </div>
+    </nav>
+    <div class="home-body">
+        <div class="welcome-section">
+            <h1>Welcome to the Farmer's Market</h1>
+            <p>Your place to shop fresh, local produce and sell your harvest.</p>
+            <p>Let's get started!</p>
+            <div class="button-container">
+                <a href="/register">Register</a>
+            </div>
+        </div>
+        <div class="categories-container">
+            <div class="categories">
+                <div class="category-button-container">
+                    <a href="/products/vegetables">Vegetables</a>
+                </div>
+                <div class="category-button-container">
+                    <a href="/products/fruits">Fruits</a>
+                </div>
+                <div class="category-button-container">
+                    <a href="/products/seeds">Seeds</a>
+                </div>
+            </div>
+        </div>
     </div>
-
+    <nav class="navbar navbar-container">
+        <a class="navbar-brand" href="/products">Latest Products</a>
+        <div>
+            <form class="form-inline my-2 my-lg-0" action="/search" method="get">
+                <input class="form-control mr-sm-2" type="search" name="query" placeholder="Search for products" aria-label="Search">
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+            </form>
+        </div>
+    </nav>
+    <div class="product-container">
+        <div class="container">
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.title }}</h5>
+                            <p class="card-text">{{ product.description }}</p>
+                            <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 </body>
 </html>

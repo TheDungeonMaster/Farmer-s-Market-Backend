@@ -97,6 +97,7 @@ def load_user(user_id):
 #GENERAL
 @app.route('/')
 def index():
+    products = Product.query.all()
     return render_template('index.html', products=products)
 
 @app.route('/products')
