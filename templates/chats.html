@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Chats</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2B8C44;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #EFF299;
+            --white: #FFFFFF;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1rem;
+            background-color: var(--secondary-color);
+        }
+
+        .navbar a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1.25rem;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .chat-list-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            background-color: var(--background-light);
+            min-height: 80vh;
+        }
+
+        .chat-card {
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background-color: var(--white);
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .chat-card h5 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .chat-card p {
+            margin: 0.5rem 0 0;
+            color: var(--text-color-light);
+        }
+
+        .chat-card a {
+            color: var(--white);
+            background-color: var(--primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .chat-card a:hover {
+            background-color: #45a049;
+        }
+
+        .back {
+            padding: 0rem 0.5rem;
+        }
+
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a class="navbar-brand" href="/">Online Farmer Market</a>
+        <div>
+            <a class="nav-link back" onclick="history.back()">Go back</a>
+        </div>
+    </nav>
+    <div class="chat-list-container">
+        <h1>Your Chats</h1>
+        {% for chatroom in chatrooms %}
+        <div class="chat-card">
+            <div>
+                <h5>Chat with {{ chatroom.other_user_name }}</h5>
+            </div>
+            <a href="/chatroom/{{ chatroom.chatroom_id }}">View Chat</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

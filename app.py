@@ -4,7 +4,7 @@ import math
 import random
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, and_, or_
 from sqlalchemy.orm import sessionmaker
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
@@ -13,6 +13,8 @@ import pymysql
 import mysql.connector 
 import pyotp
 import os
+from datetime import datetime
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 #App
 app = Flask(__name__)
@@ -22,6 +24,7 @@ engine = create_engine("mysql://admin:labkafarmer01@farmer-market.cheqy8c0cs83.e
 Session = sessionmaker(bind=engine)
 login_manager = LoginManager(app)
 mail = Mail(app)
+socketio = SocketIO(app)
 
 #Database connections
 
@@ -88,6 +91,20 @@ class Farm(db.Model):
     location = db.Column(db.String(100))
     farm_size = db.Column(db.String(50))
     farmer_id = db.Column(db.Integer, db.ForeignKey('farmer.farmer_id'))
+    
+class Chatroom(db.Model):
+    __tablename__ = 'chatroom'
+    chatroom_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_1 = db.Column(db.Integer, db.ForeignKey('user.user_id'))
+    user_2 = db.Column(db.Integer, db.ForeignKey('user.user_id'))
+    
+class Messages(db.Model):
+    __tablename__ = 'messages'
+    message_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    chatroom_id = db.Column(db.Integer, db.ForeignKey('chatroom.chatroom_id'))
+    text = db.Column(db.String(500))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))
+    m_time = db.Column(db.DateTime, default=datetime.utcnow)
 
 #USER LOADER
 @login_manager.user_loader
@@ -98,7 +115,15 @@ def load_user(user_id):
 @app.route('/')
 def index():
     products = Product.query.all()
-    return render_template('index.html', products=products)
+    role = current_user.role if current_user.is_authenticated else None
+    farmer_id = None
+    if role == 'farmer':
+        farmer = Farmer.query.filter_by(email=current_user.email).first()
+        if farmer:
+            farmer_id = farmer.farmer_id
+    username = current_user.username if current_user.is_authenticated else None
+    user = current_user if current_user.is_authenticated else None
+    return render_template('index.html', products=products, user=user, username=username, role=role, farmer_id=farmer_id)
 
 @app.route('/products')
 def products():
@@ -575,6 +600,143 @@ def buyers():
     ]
     return jsonify(buyer_list)
 
+#CHAT
+@app.route('/message/<string:farm_name>')
+def message(farm_name):
+    farm = Farm.query.filter_by(farm_name=farm_name).first()
+    farmer = Farmer.query.filter_by(farmer_id=farm.farmer_id).first()
+    user = User.query.filter_by(username=farmer.username).first()
+    chatroom = Chatroom.query.filter_by(user_1=current_user.user_id, user_2=user.user_id).first()
+    if not chatroom:
+        chatroom = Chatroom(user_1=current_user.user_id, user_2=user.user_id)
+        db.session.add(chatroom)
+        db.session.commit()
+    chatroom_id = chatroom.chatroom_id
+    return redirect(url_for('chatroom', chatroom_id=chatroom_id))
+
+@app.route('/chatroom/<int:chatroom_id>')
+def chatroom(chatroom_id):
+    chatroom = Chatroom.query.filter_by(chatroom_id=chatroom_id).first()
+    if current_user.user_id not in [chatroom.user_1, chatroom.user_2]:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    if current_user.user_id == chatroom.user_1:
+        recipient_username = User.query.filter_by(user_id=chatroom.user_2).first().username
+    elif current_user.user_id == chatroom.user_2:
+        recipient_username = User.query.filter_by(user_id=chatroom.user_1).first().username
+    user_1 = current_user.user_id
+    user_2 = chatroom.user_2
+    messages = Messages.query.filter_by(chatroom_id=chatroom_id).order_by(Messages.m_time.asc()).all()
+    return render_template('chatroom.html', chatroom_id=chatroom_id, user_1=user_1, user_2=user_2, messages=messages, recipient_username=recipient_username)
+
+@app.route('/send-message/<int:chatroom_id>', methods=['POST'])
+def send_message(chatroom_id):
+    chatroom = Chatroom.query.filter_by(chatroom_id=chatroom_id).first()
+    if current_user.user_id not in [chatroom.user_1, chatroom.user_2]:
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    user_1 = current_user.user_id
+    user_2 = chatroom.user_2
+    text = request.form.get('content')
+    message = Messages(text=text, chatroom_id=chatroom_id, user_id=user_1)
+    db.session.add(message)
+    db.session.commit()
+    return redirect(url_for('chatroom', chatroom_id=chatroom_id))
+
+@app.route('/chats')
+def chats():
+    user_id = current_user.user_id
+    chatrooms = Chatroom.query.filter(or_(Chatroom.user_1 == user_id, Chatroom.user_2 == user_id)).all()
+    chat_details = []
+    for chatroom in chatrooms:
+        other_user_id = chatroom.user_2 if chatroom.user_1 == user_id else chatroom.user_1
+        other_user = User.query.get(other_user_id)
+        farm = Farm.query.filter_by(farmer_id=other_user.user_id).first()
+        chat_details.append({
+            "chatroom_id": chatroom.chatroom_id,
+            "other_user_name": other_user.username,
+            "farm_name": farm.farm_name if farm else "N/A"
+        })
+    return render_template('chats.html', chatrooms=chat_details)
+
+@app.route('/api/message', methods=['GET'])
+def api_message():
+    data = request.get_json()
+    current_user_id = data.get('user_id')
+    farmer_id = data.get('farmer_id')
+    farmer = Farmer.query.filter_by(farmer_id=farmer_id).first()
+    farmer_user = User.query.filter_by(username=farmer.username).first()
+    chatroom = Chatroom.query.filter_by(user_1=current_user_id, user_2=farmer_user.user_id).first()
+    if not chatroom:
+        chatroom = Chatroom(user_1=current_user.user_id, user_2=user.user_id)
+        db.session.add(chatroom)
+        db.session.commit()
+    chatroom_id = chatroom.chatroom_id
+    return jsonify({"chatroom_id": chatroom_id})
+
+@app.route('/api/get-messages', methods=['GET'])
+def api_get_messages():
+    data = request.get_json()
+    chatroom_id = data.get('chatroom_id')
+    messages = Messages.query.filter_by(chatroom_id=chatroom_id).order_by(Messages.m_time.asc()).all()
+    message_list = []
+    for message in messages:
+        message_list.append({
+            "text": message.text,
+            "user_id": message.user_id,
+            "m_time": message.m_time,
+        })
+    return jsonify({"messages": message_list}), 200
+
+@app.route('/api/send-message', methods=['POST'])
+def api_send_message():
+    data = request.get_json()
+    chatroom_id = data.get('chatroom_id')
+    text = data.get('text')
+    user_id = data.get('user_id')
+    message = Messages(text=text, chatroom_id=chatroom_id, user_id=user_id)
+    db.session.add(message)
+    db.session.commit()
+    return jsonify({"success": True}), 200
+
+@app.route('/api/get-chatrooms', methods=['GET'])
+def api_get_chatrooms():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    chatrooms = Chatroom.query.filter(or_(Chatroom.user_1 == user_id, Chatroom.user_2 == user_id)).all()
+    chatroom_list = []
+    for chatroom in chatrooms:
+        if chatroom.user_1 == user_id:
+            other_user_id = chatroom.user_2
+        else:
+            other_user_id = chatroom.user_1
+        other_user = User.query.filter_by(user_id=other_user_id).first()
+        chatroom_list.append({
+            "chatroom_id": chatroom.chatroom_id,
+            "other_user_name": other_user.username,
+        })
+    return jsonify({"chatrooms": chatroom_list}), 200
+
+@socketio.on('join')
+def on_join(data):
+    chatroom_id = data['chatroom_id']
+    join_room(chatroom_id)
+    
+@socketio.on('leave')
+def on_leave(data):
+    chatroom_id = data['chatroom_id']
+    leave_room(chatroom_id)
+    
+@socketio.on('send_message')
+def handle_send_message(data):
+    chatroom_id = data['chatroom_id']
+    text = data['text']
+    user_id = data['user_id']  # Ideally, you should fetch this from the session or token
+    # Save the message to the database
+    message = Messages(chatroom_id=chatroom_id, text=text, user_id=user_id)
+    db.session.add(message)
+    db.session.commit()
+    # Broadcast the message to everyone in the chatroom
+    emit('message', {'text': text, 'user_id': user_id}, to=chatroom_id)
+
 #LOGIN MANAGER
 @app.route('/login')
 def login():
@@ -608,10 +770,10 @@ def login_post():
             if not farmer:
                 farmer = Farmer.query.filter_by(username=email_or_username).first()
             farmer_id = farmer.farmer_id
-            return redirect(url_for('farmer_dashboard', farmer_id = farmer_id))
+            return redirect(url_for('index'))
         elif user.role == 'buyer':
             login_user(user)
-            return redirect(url_for('products'))
+            return redirect(url_for('index'))
         elif user.role == 'moderator':
             login_user(user)
             return redirect(url_for('moderator'))
@@ -763,5 +925,5 @@ def api_delete_product():
     return jsonify({"message": "Product deleted successfully"}), 200
     
 #Main
-if __name__ in '__main__':
-        app.run(debug = True)
+if __name__ == '__main__':
+    socketio.run(app, debug=True)

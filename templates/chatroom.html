@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatroom</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2B8C44;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #EFF299;
+            --white: #FFFFFF;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1rem;
+            background-color: var(--secondary-color);
+        }
+
+        .navbar a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1.25rem;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            background-color: var(--background-light);
+            padding: 2rem;
+        }
+
+        .chat-window {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--white);
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background-color: var(--primary-color);
+            color: var(--white);
+            margin-left: auto;
+        }
+
+        .message.other {
+            background-color: #e0e0e0;
+            color: var(--text-color-dark);
+            margin-right: auto;
+        }
+
+        .chat-input-container {
+            display: flex;
+            border-top: 1px solid #ccc;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .send-button {
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            padding: 0 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .send-button:hover {
+            background-color: #45a049;
+        }
+        .nav-link{
+            padding:0rem 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a class="navbar-brand" href="/">Online Farmer Market</a>
+        <div>
+            <a class="nav-link logout-button" href="/logout">Logout</a>
+            <a class="nav-link" onclick="history.back()">Go back</a>
+        </div>
+    </nav>
+    <div class="chat-container">
+        <div class="chat-window">
+            <div class="chat-header">
+                Chat with {{ recipient_username }}
+            </div>
+            <div class="chat-messages">
+                {% for message in messages %}
+                <div class="message {{ 'user' if message.user_id == current_user.user_id else 'other' }}">
+                    {{ message.text }}
+                </div>
+                {% endfor %}
+            </div>
+            <form class="chat-input-container" action="/send-message/{{ chatroom_id }}" method="POST">
+                <input class="chat-input" type="text" name="content" placeholder="Type your message here..." required>
+                <button class="send-button" type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

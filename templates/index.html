@@ -53,6 +53,14 @@
             font-weight: bold;
         }
 
+        .username {
+            display: inline-block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 0rem 2rem;
+            color: white;
+        }
+
         /* Welcome Section */
         .welcome-section {
             display: flex;
@@ -92,14 +100,16 @@
         .categories {
             display: flex;
             justify-content: space-evenly;
+            align-items:center;
             max-width: 90%;
             margin: auto;
             flex-wrap: wrap;
+            gap:2rem;
         }
 
         .category-button-container a {
-            display: inline-block;
-            padding: 2rem;
+            display: flex;
+            padding: 1.5rem;
             font-size: 1.25rem;
             text-decoration: none;
             color: var(--primary-color);
@@ -108,6 +118,7 @@
             transition: background-color 0.3s ease, transform 0.2s ease;
             font-weight: bold;
             box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 1;
         }
 
         .category-button-container a:hover {
@@ -139,6 +150,22 @@
 
         .nav-item {
             list-style-type: none;
+        }
+
+        .logout-button {
+            padding: 0rem 0.5rem;
+        }
+
+        .login-button {
+            padding: 0rem 0.5rem;
+        }
+
+        .chat-button {
+            padding: 0rem 0.5rem;
+        }
+
+        .dashboard-button {
+            padding: 0rem 1.5rem;
         }
 
         .product-container {
@@ -197,15 +224,30 @@
                 gap: 1rem;
             }
         }
+        .account-display {
+            background-color: var(--primary-color);
+        }
+        .categories-title{
+            color: white;
+            text-align:center;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar nav-container">
         <a class="navbar-brand" href="#">Online Farmer Market</a>
-        <div>
-            <a class="nav-link" href="/login">Login</a>
+        <div class="nav-buttons">
+            <a class="chat-button" href="/chats" style="display: none;">Chat</a>
+            {% if role == 'farmer' %}
+                <a href="/farmer/farmer_dashboard/{{ farmer_id }}" class="dashboard-button">Go to Dashboard</a>
+            {% endif %}
+            <a class="nav-link login-button" href="/login">Login</a>
+            <a class="nav-link logout-button" href="/logout" style="display: none;">Logout</a>
         </div>
     </nav>
+    <div class="account-display">
+        <p class="username" style="display: none;"></p>
+    </div>
     <div class="home-body">
         <div class="welcome-section">
             <h1>Welcome to the Farmer's Market</h1>
@@ -216,6 +258,7 @@
             </div>
         </div>
         <div class="categories-container">
+            <h2 class="categories-title">Categories</h2>
             <div class="categories">
                 <div class="category-button-container">
                     <a href="/products/vegetables">Vegetables</a>
@@ -248,6 +291,9 @@
                             <h5 class="card-title">{{ product.title }}</h5>
                             <p class="card-text">{{ product.description }}</p>
                             <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
+                            {% if role == 'buyer' %}
+                                <a class="write-button" href="/message/{{ product.farm_name }}" style="display: none;">Write to Seller</a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -255,5 +301,22 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const user = "{{ username }}";
+            if (user != "None") {
+                document.querySelector('.welcome-section').style.display = "none";
+                document.querySelector('.username').style.display = "inline-block";
+                document.querySelector('.username').textContent = `Welcome, ${user}`;
+                document.querySelector('.chat-button').style.display = "inline-block";
+                document.querySelector('.login-button').style.display = "none";
+                document.querySelector('.logout-button').style.display = "inline-block";
+                document.querySelectorAll('.write-button').forEach(button => {
+                    button.style.display = "inline-block";
+                });
+            }
+        });
+    </script>
 </body>
 </html>
