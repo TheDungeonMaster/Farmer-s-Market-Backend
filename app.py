@@ -923,6 +923,23 @@ def api_delete_product():
     db.session.delete(product)
     db.session.commit()
     return jsonify({"message": "Product deleted successfully"}), 200
+
+@socketio.on('join')
+def on_join(data):
+    chatroom_id = data['chatroom_id']
+    join_room(chatroom_id)
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    chatroom_id = data['chatroom_id']
+    text = data['text']
+    user_id = data['user_id']  # Ideally, you should fetch this from the session or token
+    # Save the message to the database
+    message = Messages(chatroom_id=chatroom_id, text=text, user_id=user_id)
+    db.session.add(message)
+    db.session.commit()
+    # Broadcast the message to everyone in the chatroom
+    emit('message', {'text': text, 'user_id': user_id}, to=chatroom_id)
     
 #Main
 if __name__ == '__main__':

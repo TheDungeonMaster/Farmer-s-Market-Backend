@@ -155,5 +155,39 @@
             </form>
         </div>
     </div>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        // Join the chatroom
+        const chatroomId = "{{ chatroom_id }}";
+        const userId = "{{ current_user.user_id }}"; // Pass this from the backend
+        socket.emit('join', { chatroom_id: chatroomId });
+
+        // Listen for new messages
+        socket.on('message', function(data) {
+            const chatMessages = document.querySelector('.chat-messages');
+            const newMessage = document.createElement('div');
+            newMessage.classList.add('message');
+            newMessage.textContent = data.text;
+            if (data.user_id === userId) {
+                newMessage.classList.add('user');
+            } else {
+                newMessage.classList.add('other');
+            }
+            chatMessages.appendChild(newMessage);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        // Send a message
+        const form = document.querySelector('.chat-input-container');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const input = document.querySelector('.chat-input');
+            const messageText = input.value;
+            socket.emit('send_message', { chatroom_id: chatroomId, text: messageText, user_id: userId });
+            input.value = ''; // Clear the input
+        });
+    </script>
 </body>
 </html>
