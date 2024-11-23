@@ -97,7 +97,8 @@
         }
 
         .back {
-            padding: 0rem 0.5rem;
+            padding: 0rem 0.75rem;
+            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
         }
 
     </style>
@@ -106,7 +107,9 @@
     <nav class="navbar">
         <a class="navbar-brand" href="/">Online Farmer Market</a>
         <div>
-            <a class="nav-link back" onclick="history.back()">Go back</a>
+            <a class="nav-link back" onclick="history.back()">
+                <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
+            </a>
         </div>
     </nav>
     <div class="chat-list-container">

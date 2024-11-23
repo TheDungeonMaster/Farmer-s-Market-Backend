@@ -152,20 +152,12 @@
             list-style-type: none;
         }
 
-        .logout-button {
-            padding: 0rem 0.5rem;
+        .nav-link {
+            padding: 0rem 0.75rem;
         }
 
-        .login-button {
-            padding: 0rem 0.5rem;
-        }
-
-        .chat-button {
-            padding: 0rem 0.5rem;
-        }
-
-        .dashboard-button {
-            padding: 0rem 1.5rem;
+        .chat-button, .cart-button, .logout-button {
+            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
         }
 
         .product-container {
@@ -237,12 +229,21 @@
     <nav class="navbar nav-container">
         <a class="navbar-brand" href="#">Online Farmer Market</a>
         <div class="nav-buttons">
-            <a class="chat-button" href="/chats" style="display: none;">Chat</a>
+            {% if role == 'buyer' %}
+                <a href="/shopping_cart/{{user.user_id}}" class="nav-link cart-button">
+                    <img src="https://www.svgrepo.com/show/80543/shopping-cart-outline.svg" alt="Shopping cart" width="30" height="30" />
+                </a>
+            {% endif %}
+            <a href="/chats" class="nav-link chat-button" style="display: none;">
+                <img src="https://www.svgrepo.com/show/529481/chat-round-dots.svg" alt="Chat" width="30" height="30" />
+            </a>
             {% if role == 'farmer' %}
-                <a href="/farmer/farmer_dashboard/{{ farmer_id }}" class="dashboard-button">Go to Dashboard</a>
+                <a href="/farmer/farmer_dashboard/{{ farmer_id }}" class="dashboard-button nav-link">Go to Dashboard</a>
             {% endif %}
             <a class="nav-link login-button" href="/login">Login</a>
-            <a class="nav-link logout-button" href="/logout" style="display: none;">Logout</a>
+            <a class="nav-link logout-button" href="/logout" style="display: none;">
+                <img src="https://www.svgrepo.com/show/524091/logout-2.svg" alt="Logout" width="30" height="30" />
+            </a>
         </div>
     </nav>
     <div class="account-display">

@@ -105,7 +105,22 @@ class Messages(db.Model):
     text = db.Column(db.String(500))
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))
     m_time = db.Column(db.DateTime, default=datetime.utcnow)
-
+    
+class Order(db.Model):
+    __tablename__ = 'order'
+    order_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    status = db.Column(db.String(20), default='pending')
+    order_date = db.Column(db.DateTime, default=datetime.utcnow)
+    preference = db.Column(db.String(100))
+    buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.buyer_id'))
+    
+class OrderItem(db.Model):
+    __tablename__ = 'orderitem'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.order_id'))
+    product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
+    amount = db.Column(db.Integer)
+    
 #USER LOADER
 @login_manager.user_loader
 def load_user(user_id):
@@ -600,6 +615,51 @@ def buyers():
     ]
     return jsonify(buyer_list)
 
+#ORDERS
+@app.route('/order/<int:buyer_id>', methods=['GET'])
+@login_required
+def order(buyer_id):
+    order = Order.query.filter_by(buyer_id=buyer_id).first()
+    if not order:
+        return jsonify({"message": "Order not found"}), 404
+    order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+    order_list = []
+    for order_item in order_items:
+        product = Product.query.filter_by(product_id=order_item.product_id).first()
+        order_list.append({
+            "order_id": order.order_id,
+            "product_id": order_item.product_id,
+            "title": product.title,
+            "price": product.price,
+            "quantity": order_item.quantity
+        })
+    return jsonify(order_list)
+
+@app.route('/shopping_cart/<int:buyer_id>', methods=['GET'])
+@login_required
+def shopping_cart(buyer_id):
+    grand_total = 0
+    order = Order.query.filter_by(buyer_id=buyer_id).first()
+    if not order:
+        order = Order(buyer_id=buyer_id, preference='pending')
+        db.session.add(order)
+        db.session.commit()
+        return render_template('shopping_cart.html', order_list=[], grand_total=0)
+    order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+    order_list = []
+    for order_item in order_items:
+        product = Product.query.filter_by(product_id=order_item.product_id).first()
+        total_price = product.price * order_item.amount
+        grand_total += total_price
+        order_list.append({
+            "order_id": order.order_id,
+            "product_id": order_item.product_id,
+            "title": product.title,
+            "price": product.price,
+            "amount": order_item.amount
+        })
+    return render_template('shopping_cart.html', order_list=order_list, grand_total=grand_total)
+
 #CHAT
 @app.route('/message/<string:farm_name>')
 def message(farm_name):
@@ -729,12 +789,10 @@ def on_leave(data):
 def handle_send_message(data):
     chatroom_id = data['chatroom_id']
     text = data['text']
-    user_id = data['user_id']  # Ideally, you should fetch this from the session or token
-    # Save the message to the database
+    user_id = data['user_id']
     message = Messages(chatroom_id=chatroom_id, text=text, user_id=user_id)
     db.session.add(message)
     db.session.commit()
-    # Broadcast the message to everyone in the chatroom
     emit('message', {'text': text, 'user_id': user_id}, to=chatroom_id)
 
 #LOGIN MANAGER
@@ -923,23 +981,6 @@ def api_delete_product():
     db.session.delete(product)
     db.session.commit()
     return jsonify({"message": "Product deleted successfully"}), 200
-
-@socketio.on('join')
-def on_join(data):
-    chatroom_id = data['chatroom_id']
-    join_room(chatroom_id)
-
-@socketio.on('send_message')
-def handle_send_message(data):
-    chatroom_id = data['chatroom_id']
-    text = data['text']
-    user_id = data['user_id']  # Ideally, you should fetch this from the session or token
-    # Save the message to the database
-    message = Messages(chatroom_id=chatroom_id, text=text, user_id=user_id)
-    db.session.add(message)
-    db.session.commit()
-    # Broadcast the message to everyone in the chatroom
-    emit('message', {'text': text, 'user_id': user_id}, to=chatroom_id)
     
 #Main
 if __name__ == '__main__':
