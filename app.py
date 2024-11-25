@@ -132,13 +132,18 @@ def index():
     products = Product.query.all()
     role = current_user.role if current_user.is_authenticated else None
     farmer_id = None
+    buyer_id = None
     if role == 'farmer':
         farmer = Farmer.query.filter_by(email=current_user.email).first()
         if farmer:
             farmer_id = farmer.farmer_id
+    elif role == 'buyer':
+        buyer = Buyer.query.filter_by(email=current_user.email).first()
+        if buyer:
+            buyer_id = buyer.buyer_id
     username = current_user.username if current_user.is_authenticated else None
     user = current_user if current_user.is_authenticated else None
-    return render_template('index.html', products=products, user=user, username=username, role=role, farmer_id=farmer_id)
+    return render_template('index.html', products=products, user=user, username=username, role=role, farmer_id=farmer_id, buyer_id=buyer_id)
 
 @app.route('/products')
 def products():
@@ -616,7 +621,7 @@ def buyers():
     return jsonify(buyer_list)
 
 #ORDERS
-@app.route('/order/<int:buyer_id>', methods=['GET'])
+@app.route('/order/<int:buyer_id>')
 @login_required
 def order(buyer_id):
     order = Order.query.filter_by(buyer_id=buyer_id).first()
@@ -633,15 +638,15 @@ def order(buyer_id):
             "price": product.price,
             "quantity": order_item.quantity
         })
-    return jsonify(order_list)
+    return jsonify(order_list), 200
 
-@app.route('/shopping_cart/<int:buyer_id>', methods=['GET'])
+@app.route('/shopping_cart/<int:buyer_id>')
 @login_required
 def shopping_cart(buyer_id):
     grand_total = 0
     order = Order.query.filter_by(buyer_id=buyer_id).first()
     if not order:
-        order = Order(buyer_id=buyer_id, preference='pending')
+        order = Order(buyer_id=buyer_id, status='pending', preference='N/A')
         db.session.add(order)
         db.session.commit()
         return render_template('shopping_cart.html', order_list=[], grand_total=0)
@@ -658,17 +663,143 @@ def shopping_cart(buyer_id):
             "price": product.price,
             "amount": order_item.amount
         })
-    return render_template('shopping_cart.html', order_list=order_list, grand_total=grand_total)
+    return render_template('shopping_cart.html', order_list=order_list, grand_total=grand_total, buyer_id=buyer_id)
 
-#CHAT
+@app.route('/add_to_cart/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    amount = request.form.get('amount')
+    print(amount)
+    buyer = Buyer.query.filter_by(email=current_user.email).first()
+    order = Order.query.filter_by(buyer_id=buyer.buyer_id, status='pending').first()
+    if not order:
+        order = Order(buyer_id=buyer.buyer_id, status='pending', preference='N/A')
+        db.session.add(order)
+        db.session.commit()
+    order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
+    db.session.add(order_item)
+    db.session.commit()
+    return redirect(url_for('shopping_cart', buyer_id=buyer.buyer_id))
+
+@app.route('/remove_from_cart/<int:buyer_id>/<int:product_id>', methods=['DELETE', 'POST'])
+@login_required
+def remove_from_cart(buyer_id, product_id):
+    amount = request.form.get('amount')
+    amount = int(amount)
+    buyer = Buyer.query.filter_by(email=current_user.email).first()
+    order = Order.query.filter_by(buyer_id=buyer.buyer_id, status='pending').first()
+    if not order:
+        return jsonify({"message": "Order not found"}), 404
+    order_item = OrderItem.query.filter_by(order_id=order.order_id, product_id=product_id).first()
+    order_item.amount -= amount
+    if order_item.amount <= 0:
+        db.session.delete(order_item)
+    db.session.commit()
+    return redirect(url_for('shopping_cart', buyer_id=buyer.buyer_id))
+    
+
+@app.route('/checkout/<int:buyer_id>', methods=['POST'])
+@login_required
+def checkout(buyer_id):
+    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    if not order:
+        return jsonify({"message": "Order not found"}), 404
+    order.preference = 'ordered'
+    db.session.commit()
+    return jsonify({"message": "Checkout successful"}), 200
+
+@app.route("/api/shopping_cart", methods=["GET"])
+@login_required
+def api_shopping_cart():
+    data = request.get_json()
+    buyer_id = data.get("buyer_id")
+    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    if not order:
+        order = Order(buyer_id=buyer_id, preference='pending')
+        db.session.add(order)
+        db.session.commit()
+    order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+    order_list = []
+    for order_item in order_items:
+        product = Product.query.filter_by(product_id=order_item.product_id).first()
+        order_list.append({
+            "order_id": order.order_id,
+            "product_id": order_item.product_id,
+            "title": product.title,
+            "price": product.price,
+            "amount": order_item.amount
+        })
+    return jsonify(order_list), 200
+
+@app.route("/api/checkout", methods=["POST"])
+@login_required
+def api_checkout():
+    data = request.get_json()
+    buyer_id = data.get("buyer_id")
+    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    if not order: 
+        return jsonify({"message": "Order not found"}), 404
+    order.preference = 'ordered'
+    db.session.commit()
+    return jsonify({"message": "Checkout successful"}), 200
+
+@app.route('/api/add_to_cart', methods=['POST'])
+@login_required
+def api_add_to_cart():
+    data = request.get_json()
+    product_id = data.get("product_id")
+    buyer_id = data.get("buyer_id")
+    amount = data.get("amount")
+    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    if not order:
+        order = Order(buyer_id=buyer_id, preference='pending')
+        db.session.add(order)
+        db.session.commit()
+    order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
+    db.session.add(order_item)
+    db.session.commit()
+    return jsonify({"message": "Product added to cart"}), 200
+
+@app.route('/api/remove_from_cart', methods=['DELETE'])
+@login_required
+def api_remove_from_cart():
+    data = request.get_json()
+    buyer_id = data.get("buyer_id")
+    order_item_id = data.get("order_item_id")
+    amount = data.get("amount")
+    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    if not order:
+        return jsonify({"message": "Order not found"}), 404
+    order_item = OrderItem.query.filter_by(order_id=order.order_id, id=order_item_id).first()
+    if not order_item:
+        return jsonify({"message": "Order item not found"}), 404
+    order_item.amount -= amount
+    if order_item.amount <= 0:
+        db.session.delete(order_item)
+    db.session.commit()
+    return jsonify({"message": "Product removed from cart"}), 200
+
+#CHAT FOR MAIN PAGE
 @app.route('/message/<string:farm_name>')
-def message(farm_name):
+def message_farm(farm_name):
     farm = Farm.query.filter_by(farm_name=farm_name).first()
     farmer = Farmer.query.filter_by(farmer_id=farm.farmer_id).first()
-    user = User.query.filter_by(username=farmer.username).first()
-    chatroom = Chatroom.query.filter_by(user_1=current_user.user_id, user_2=user.user_id).first()
+    other_user = User.query.filter_by(username=farmer.username).first()
+    chatroom = Chatroom.query.filter_by(user_1=current_user.user_id, user_2=other_user.user_id).first()
     if not chatroom:
-        chatroom = Chatroom(user_1=current_user.user_id, user_2=user.user_id)
+        chatroom = Chatroom(user_1=current_user.user_id, user_2=other_user.user_id)
+        db.session.add(chatroom)
+        db.session.commit()
+    chatroom_id = chatroom.chatroom_id
+    return redirect(url_for('chatroom', chatroom_id=chatroom_id))
+
+#START CHATTING USING USER ID
+@app.route('/message/<int:user_id>')
+def message_user(user_id):
+    other_user = User.query.filter_by(user_id=user_id).first()
+    chatroom = Chatroom.query.filter_by(user_1=current_user.user_id, user_2=other_user.user_id).first()
+    if not chatroom:
+        chatroom = Chatroom(user_1=current_user.user_id, user_2=other_user.user_id)
         db.session.add(chatroom)
         db.session.commit()
     chatroom_id = chatroom.chatroom_id

@@ -223,6 +223,24 @@
             color: white;
             text-align:center;
         }
+        .col-md-4 {
+            flex: 0 0 33.3333%;
+            max-width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+            box-sizing: border-box;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            justify-content: space-around;
+            align-items: center;
+            justify-items: center;
+        }
     </style>
 </head>
 <body>
@@ -230,7 +248,7 @@
         <a class="navbar-brand" href="#">Online Farmer Market</a>
         <div class="nav-buttons">
             {% if role == 'buyer' %}
-                <a href="/shopping_cart/{{user.user_id}}" class="nav-link cart-button">
+                <a href="/shopping_cart/{{buyer_id}}" class="nav-link cart-button">
                     <img src="https://www.svgrepo.com/show/80543/shopping-cart-outline.svg" alt="Shopping cart" width="30" height="30" />
                 </a>
             {% endif %}
@@ -293,11 +311,21 @@
                             <p class="card-text">{{ product.description }}</p>
                             <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
                             {% if role == 'buyer' %}
+                                <form method = "POST" action="/add_to_cart/{{ product.product_id }}">
+                                    <div class="form-group">
+                                        <label for="amount_{{ product.id }}">Amount:</label>
+                                        <input type="number" id="amount_{{ product.id }}" name="amount" class="form-control" min="1" value="1" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary mt-2">Add to Cart</button>
+                                </form>
                                 <a class="write-button" href="/message/{{ product.farm_name }}" style="display: none;">Write to Seller</a>
                             {% endif %}
                         </div>
                     </div>
                 </div>
+                    {% if loop.index % 3 == 0 and not loop.last %}
+                        </div><div class="row">
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
