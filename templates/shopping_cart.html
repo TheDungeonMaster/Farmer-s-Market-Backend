@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <style>
+        /* Reusing styles from index.html */
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2B8C44;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #EFF299;
+            --white: #FFFFFF;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem;
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .navbar a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1.25rem;
+        }
+
+        .cart-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background-color: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--text-color-light);
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item h4 {
+            margin: 0;
+        }
+
+        .cart-item p {
+            margin: 0.5rem 0;
+        }
+
+        .total {
+            text-align: right;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .checkout-btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            margin-top: 1rem;
+            font-size: 1rem;
+            text-decoration: none;
+            color: var(--white);
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .checkout-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/">Online Farmer Market</a>
+        <a href="/logout">Logout</a>
+    </nav>
+
+    <div class="cart-container">
+        <h1>Your Shopping Cart</h1>
+        {% if order_list %}
+            {% for item in order_list %}
+            <div class="cart-item">
+                <div>
+                    <h4>{{ item.title }}</h4>
+                    <p>Price: ${{ item.price }} x {{ item.amount }}</p>
+                </div>
+                <div>
+                    <p><strong>Total: ${{ item.price * item.amount }}</strong></p>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="total">
+                Grand Total: ${{ grand_total }}
+            </div>
+            <a href="/checkout/{{ order_list[0].order_id }}" class="checkout-btn">Proceed to Checkout</a>
+        {% else %}
+            <p>Your shopping cart is empty. <a href="/products">Continue Shopping</a></p>
+        {% endif %}
+    </div>
+</body>
+</html>

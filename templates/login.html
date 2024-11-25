@@ -48,15 +48,51 @@
         .login-container input[type="submit"]:hover {
             background-color: #45a049;
         }
+        h3 {
+            text-align: center;
+        }
+        .menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .menu a {
+            color: #4CAF50;
+            font-weight: bold;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .menu a:hover {
+            background-color: #4CAF50;
+            color: #ffffff;
+        }
+        .error {
+            text-align: center;
+            font-size: 20px;
+            padding: 1rem;
+        }
     </style>
 </head>
 <body>
 
+<div class='menu'>
+    <a href="/">Home</a>
+</div>
 <div class="login-container">
     <h2>Login</h2>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class='error'>{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
     <form action="/login" method="POST">
-        <label for="email">Email:</label>
-        <input type="text" id="email" name="email" required>
+        <label for="email_or_username">Email or Username:</label>
+        <input type="text" id="email_or_username" name="email_or_username" required>
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>

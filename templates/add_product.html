@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Product</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .product-container {
+            width: 350px;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .product-container h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+        .product-container label {
+            display: block;
+            margin-top: 1rem;
+            color: #555;
+            font-weight: bold;
+        }
+        .product-container input[type="text"],
+        .product-container input[type="number"],
+        .product-container textarea,
+        .product-container select,
+        .product-container input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .product-container textarea {
+            resize: vertical;
+        }
+        .product-container button[type="submit"] {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1.5rem;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .product-container button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .product-container a {
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .product-container a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="product-container">
+    <h2>Add New Product</h2>
+
+    <form action="{{ url_for('add_product', farmer_id=farmer_id) }}" method="POST" enctype="multipart/form-data">
+        <label for="name">Product Name:</label>
+        <input type="text" id="title" name="title" required>
+
+        <label for="name">Category:</label>
+        <input type="text" id="category" name="category" required>
+
+        <label for="price">Price (per unit):</label>
+        <input type="text" id="price" name="price" step="0.01" required>
+
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="quantity" required>
+
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" required></textarea>
+
+        <label for="organic_certification">Organic Certification:</label>
+        <input type="number" id="organic_certification" name="organic_certification" required></textarea>
+
+        <button type="submit">Add Product</button>
+    </form>
+
+    <a href="{{ url_for('farmer_dashboard', farmer_id=farmer_id) }}">Back to Dashboard</a>
+</div>
+
+</body>
+</html>

@@ -3,27 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ table_name }} Data</title>
+    <title>Products</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2B8C44;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #EFF299;
+            --white: #FFFFFF;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1rem;
+            background-color: var(--secondary-color);
+        }
+
+        .navbar a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 1.25rem;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-link {
+            padding: 0rem 0.75rem;
+            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
+        }
+
+        .products {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .products-container {
+            width: 90%;
+            max-width: 600px;
+            padding: 2rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .products-container h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        .product-table th, .product-table td {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .product-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #333;
+        }
+        .product-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .out-of-stock {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>{{ table_name }} Table</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                {% for column in rows[0].keys() %}
-                    <th>{{ column }}</th>
-                {% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                <tr>
-                    {% for value in row.values() %}
-                        <td>{{ value }}</td>
+    <nav class="navbar">
+        <a class="navbar-brand" href="/">Online Farmer Market</a>
+        <div>
+            <a class="nav-link back" onclick="history.back()">
+                <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
+            </a>
+        </div>
+    </nav>
+
+<div class="products">
+    <div class="products-container">
+        <h2>Available Products</h2>
+        
+        {% if products %}
+            <table class="product-table">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>{{ product.title }}</td>
+                        <td>{{ product.category }}</td>
+                        <td>${{ product.price }}</td>
+                        <td>
+                            {% if product.quantity == 0 %}
+                                <span class="out-of-stock">Out of Stock</span>
+                            {% else %}
+                                {{ product.quantity }}
+                            {% endif %}
+                        </td>
+                    </tr>
                     {% endfor %}
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </tbody>
+            </table>
+        {% else %}
+            <p>No products available at the moment.</p>
+        {% endif %}
+    </div>
+</div>
 </body>
 </html>
