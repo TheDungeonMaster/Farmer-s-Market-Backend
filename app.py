@@ -515,6 +515,14 @@ def farmer_dashboard(farmer_id):
     low_stock_products = [product for product in products if product.quantity < 5]
     return render_template('farmer_dashboard.html',farm=farm, farmer_id=farmer_id, products=products, low_stock_products=low_stock_products)
 
+@app.route('/farmer/<int:farmer_id>/products')
+@login_required
+def display_products(farmer_id):
+    farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    products = Product.query.filter_by(farm_name=farm.farm_name).all()
+    farm_name = farm.farm_name
+    return render_template('farm_products.html', products=products, farmer_id=farmer_id, farm_name=farm_name)
+
 @app.route('/farmer/farmer_dashboard/<int:farmer_id>', methods=['POST'])
 @login_required
 def delete_product(farmer_id):
@@ -988,6 +996,8 @@ def api_register():
     email = data.get("email")
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "Email already exists"}), 400
+    elif User.query.filter_by(username=username).first():
+        return jsonify({"message": "Username already exists"}), 400
     password = data.get("password")
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     

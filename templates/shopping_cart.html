@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopping Cart</title>
     <style>
-        /* Reusing styles from index.html */
         :root {
-            --primary-color: #4CAF50;
-            --secondary-color: #2B8C44;
+            --primary-color: #fc8282;
+            --secondary-color: #ff4747;
             --background-light: #f3f3f3;
             --text-color-dark: #333;
             --text-color-light: #666;
-            --hover-highlight: #EFF299;
+            --hover-highlight: #fcd7d7;
             --white: #FFFFFF;
         }
 
@@ -90,12 +89,20 @@
         .checkout-btn:hover {
             background-color: #45a049;
         }
+        .back {
+            padding: 0rem 0.75rem;
+            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <a href="/">Online Farmer Market</a>
-        <a href="/logout">Logout</a>
+        <div>
+            <a class="nav-link back" onclick="history.back()">
+                <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
+            </a>
+        </div>
     </nav>
 
     <div class="cart-container">

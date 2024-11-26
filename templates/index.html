@@ -5,18 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Farmer's Market</title>
     <style>
-        /* CSS Variables for a consistent theme */
         :root {
-            --primary-color: #4CAF50;
-            --secondary-color: #2B8C44;
+            --primary-color: #fc5c5c;
+            --secondary-color: #ff4747;
             --background-light: #f3f3f3;
             --text-color-dark: #333;
             --text-color-light: #666;
-            --hover-highlight: #EFF299;
+            --hover-highlight: #fcd7d7;
             --white: #FFFFFF;
         }
 
-        /* General Styling */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
@@ -58,7 +56,7 @@
             font-size: 1.5rem;
             font-weight: bold;
             padding: 0rem 2rem;
-            color: white;
+            color: var(--secondary-color);
         }
 
         /* Welcome Section */
@@ -87,13 +85,13 @@
         }
 
         .button-container a:hover {
-            background-color: #45a049;
+            background-color: var(--secondary-color);
             transform: translateY(-3px);
         }
 
         /* Categories Section */
         .categories-container {
-            background-color: var(--primary-color);
+            background-color: var(--background-light);
             padding: 2rem 0;
         }
 
@@ -114,7 +112,8 @@
             text-decoration: none;
             color: var(--primary-color);
             background-color: var(--white);
-            border-radius: 10px;
+            border-radius: 15px;
+            border: 2px solid var(--secondary-color);
             transition: background-color 0.3s ease, transform 0.2s ease;
             font-weight: bold;
             box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
@@ -135,16 +134,16 @@
         }
 
         .btn-outline-success {
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
+            color: var(--secondary-color);
+            border: 2px solid var(--secondary-color);
             padding: 0.5rem 1rem;
-            background-color: transparent;
+            background-color: white;
             cursor: pointer;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .btn-outline-success:hover {
-            background-color: var(--primary-color);
+            background-color: var(--secondary-color);
             color: var(--white);
         }
 
@@ -167,7 +166,7 @@
 
         .product-container .card {
             background-color: var(--white);
-            border: 1px solid var(--shadow-light);
+            border: 1px solid var(--secondary-color);
             border-radius: 10px;
             box-shadow: 0px 4px 8px var(--shadow-light);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -217,15 +216,14 @@
             }
         }
         .account-display {
-            background-color: var(--primary-color);
+            background-color: var(--background-light);
         }
         .categories-title{
-            color: white;
+            color: var(--secondary-color);
             text-align:center;
         }
         .col-md-4 {
-            flex: 0 0 33.3333%;
-            max-width: 100%;
+            flex: 100%;
             padding-right: 15px;
             padding-left: 15px;
             box-sizing: border-box;
@@ -236,7 +234,7 @@
         }
         .row {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             justify-content: space-around;
             align-items: center;
             justify-items: center;
@@ -323,7 +321,7 @@
                         </div>
                     </div>
                 </div>
-                    {% if loop.index % 3 == 0 and not loop.last %}
+                    {% if loop.index % 4 == 0 and not loop.last %}
                         </div><div class="row">
                     {% endif %}
                 {% endfor %}

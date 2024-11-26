@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buyer Registration</title>
     <style>
+        :root {
+            --primary-color: #fc8282;
+            --secondary-color: #ff4747;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #fcd7d7;
+            --white: #FFFFFF;
+        }
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -49,14 +58,14 @@
             min-height: 80px;
         }
         .registration-container input[type="submit"] {
-            background-color: #4CAF50;
+            background-color: var(--secondary-color);
             color: white;
             border: none;
             cursor: pointer;
             font-weight: bold;
         }
         .registration-container input[type="submit"]:hover {
-            background-color: #45a049;
+            background-color: var(--primary-color);
         }
         .menu {
             position: absolute;
@@ -64,16 +73,16 @@
             right: 20px;
         }
         .menu a {
-            color: #4CAF50;
+            color: var(--secondary-color);
             font-weight: bold;
             text-decoration: none;
             padding: 0.5rem 1rem;
-            border: 2px solid #4CAF50;
+            border: 2px solid var(--secondary-color);
             border-radius: 5px;
             transition: background-color 0.3s ease;
         }
         .menu a:hover {
-            background-color: #4CAF50;
+            background-color: var(--secondary-color);
             color: #ffffff;
         }
         .error {

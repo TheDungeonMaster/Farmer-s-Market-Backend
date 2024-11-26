@@ -54,7 +54,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
+            background-color: var(--background-light);
         }
         .products-container {
             width: 90%;
@@ -91,6 +91,16 @@
             color: #e74c3c;
             font-weight: bold;
         }
+        .farm-display {
+            display: inline-block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 0rem 2rem;
+            color: var(--primary-color);
+        }
+        .farm-title {
+            background-color: var(--background-light);
+        }
     </style>
 </head>
 <body>
@@ -102,6 +112,9 @@
             </a>
         </div>
     </nav>
+    <div class="farm-title">
+        <p class="farm-display"></p>
+    </div>
 
 <div class="products">
     <div class="products-container">
@@ -139,5 +152,11 @@
         {% endif %}
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const farm = "{{ farm_name }}";
+        document.querySelector('.farm-display').textContent = `You are currently viewing ${farm}'s product list`;
+    });
+</script>
 </body>
 </html>
