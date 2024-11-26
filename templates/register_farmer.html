@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farmer Registration</title>
     <style>
+        :root {
+            --primary-color: #fc8282;
+            --secondary-color: #ff4747;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #fcd7d7;
+            --white: #FFFFFF;
+        }
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -39,21 +48,22 @@
         .registration-container input[type="password"],
         .registration-container input[type="submit"],
         .registration-container select {
-            width: 100%;
+            width: 93%;
             padding: 0.75rem;
             margin: 0.5rem 0;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
         .registration-container input[type="submit"] {
-            background-color: #4CAF50;
+            background-color: var(--primary-color);
             color: white;
             border: none;
             cursor: pointer;
             font-weight: bold;
+            width:100%;
         }
         .registration-container input[type="submit"]:hover {
-            background-color: #45a049;
+            background-color: var(--secondary-color);
         }
         .menu {
             position: absolute;
@@ -61,16 +71,16 @@
             right: 20px;
         }
         .menu a {
-            color: #4CAF50;
+            color: var(--secondary-color);
             font-weight: bold;
             text-decoration: none;
             padding: 0.5rem 1rem;
-            border: 2px solid #4CAF50;
+            border: 2px solid var(--secondary-color);
             border-radius: 5px;
             transition: background-color 0.3s ease;
         }
         .menu a:hover {
-            background-color: #4CAF50;
+            background-color: var(--secondary-color);
             color: #ffffff;
         }
         .error {
@@ -109,7 +119,11 @@
         <input type="text" id="farm_name" name="farm_name" required>
 
         <label for="crop_type">Crop Type:</label>
-        <input type="text" id="crop_type" name="crop_type" required>
+        <select id="crop_type" name="crop_type" required>
+            <option value="vegetables">Vegetables</option>
+            <option value="fruits">Fruits</option>
+            <option value="seeds">Seeds</option>
+        </select>
 
         <label for="location">Farm Location:</label>
         <input type="text" id="location" name="location" required>

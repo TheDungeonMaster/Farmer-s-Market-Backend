@@ -6,12 +6,12 @@
     <title>Chatroom</title>
     <style>
         :root {
-            --primary-color: #4CAF50;
-            --secondary-color: #2B8C44;
+            --primary-color: #fc8282;
+            --secondary-color: #ff4747;
             --background-light: #f3f3f3;
             --text-color-dark: #333;
             --text-color-light: #666;
-            --hover-highlight: #EFF299;
+            --hover-highlight: #fcd7d7;
             --white: #FFFFFF;
         }
 
@@ -122,10 +122,14 @@
         }
 
         .send-button:hover {
-            background-color: #45a049;
+            background-color: var(--secondary-color);
         }
         .nav-link{
             padding:0rem 0.75rem;
+        }
+        .back {
+            padding: 0rem 0.75rem;
+            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
         }
     </style>
 </head>
@@ -133,8 +137,9 @@
     <nav class="navbar">
         <a class="navbar-brand" href="/">Online Farmer Market</a>
         <div>
-            <a class="nav-link logout-button" href="/logout">Logout</a>
-            <a class="nav-link" onclick="history.back()">Go back</a>
+            <a class="nav-link back" onclick="history.back()">
+                <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
+            </a>
         </div>
     </nav>
     <div class="chat-container">

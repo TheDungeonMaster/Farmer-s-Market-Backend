@@ -6,12 +6,12 @@
     <title>Products</title>
     <style>
         :root {
-            --primary-color: #4CAF50;
-            --secondary-color: #2B8C44;
+            --primary-color: #fc8282;
+            --secondary-color: #ff4747;
             --background-light: #f3f3f3;
             --text-color-dark: #333;
             --text-color-light: #666;
-            --hover-highlight: #EFF299;
+            --hover-highlight: #fcd7d7;
             --white: #FFFFFF;
         }
 
@@ -47,7 +47,7 @@
             filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
         }
 
-        .products {
+        /*.products {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -90,6 +90,67 @@
         .out-of-stock {
             color: #e74c3c;
             font-weight: bold;
+        }*/
+        .product-container {
+            padding: 2rem;
+            background-color: var(--white);
+        }
+
+        .product-container .card {
+            background-color: var(--white);
+            border: 1px solid var(--secondary-color);
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px var(--shadow-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+        }
+
+        .product-container .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-body {
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 1rem 0
+        }
+
+        .card-text {
+            margin: 0.5rem 0;
+            color: var(--text-color-dark);
+        }
+
+        .card-text strong {
+            color: var(--secondary-color);
+        }
+        .col-md-4 {
+            display: flex;
+            padding-right: 15px;
+            padding-left: 15px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            justify-content: space-around;
+            align-items: center;
+            justify-items: center;
+        }
+        .btn {
+            margin-top: 1rem;
+            margin-bottom: 0.75rem;
         }
     </style>
 </head>
@@ -104,39 +165,36 @@
     </nav>
 
 <div class="products">
-    <div class="products-container">
-        <h2>Available Products</h2>
-        
-        {% if products %}
-            <table class="product-table">
-                <thead>
-                    <tr>
-                        <th>Product Name</th>
-                        <th>Category</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
-                    <tr>
-                        <td>{{ product.title }}</td>
-                        <td>{{ product.category }}</td>
-                        <td>${{ product.price }}</td>
-                        <td>
-                            {% if product.quantity == 0 %}
-                                <span class="out-of-stock">Out of Stock</span>
-                            {% else %}
-                                {{ product.quantity }}
+    <div class="product-container">
+        <div class="container">
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.title }}</h5>
+                            <p class="card-text">{{ product.description }}</p>
+                            <p class="card-text">{{ product.farm_name }}</p>
+                            <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
+                            {% if role == 'buyer' %}
+                                <form method = "POST" action="/add_to_cart/{{ product.product_id }}">
+                                    <div class="form-group">
+                                        <label for="amount_{{ product.id }}">Amount:</label>
+                                        <input type="number" id="amount_{{ product.id }}" name="amount" class="form-control" min="1" value="1" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary mt-2">Add to Cart</button>
+                                </form>
+                                <a class="btn write-button" href="/message/{{ product.farm_name }}">Write to Seller</a>
                             {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No products available at the moment.</p>
-        {% endif %}
+                        </div>
+                    </div>
+                </div>
+                    {% if loop.index % 4 == 0 and not loop.last %}
+                        </div><div class="row">
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 </body>

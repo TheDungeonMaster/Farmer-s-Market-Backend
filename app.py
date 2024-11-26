@@ -4,7 +4,7 @@ import math
 import random
 from flask import Flask, request, jsonify, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, and_, or_
+from sqlalchemy import create_engine, and_, or_, select, join
 from sqlalchemy.orm import sessionmaker
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
@@ -148,7 +148,33 @@ def index():
 @app.route('/products')
 def products():
     products = Product.query.all()
-    return render_template('products.html', products = products)
+    role = current_user.role
+    return render_template('products.html', products = products, role = role)
+
+@app.route('/products/vegetables')
+def vegetables():
+    vegetables = Product.query.filter_by(category='Vegetables').all()
+    role = current_user.role
+    return render_template('products.html', products = vegetables, role = role)
+
+@app.route('/products/fruits')
+def fruits():
+    fruits = Product.query.filter_by(category='fruits').all()
+    role = current_user.role
+    return render_template('products.html', products = fruits, role = role)
+
+@app.route('/products/seeds')
+def seeds():
+    seeds = Product.query.filter_by(category='seeds').all()
+    role = current_user.role
+    return render_template('products.html', products = seeds, role = role)
+
+@app.route('/search')
+def search_products():
+    query = request.args.get('query')
+    products = Product.query.filter(or_(Product.title.contains(query), Product.description.contains(query), Product.farm_name.contains(query), Product.category.contains(query))).all()
+    role = current_user.role
+    return render_template('products.html', products = products, role = role) 
 
 #ADMINS
 @app.route('/setup-admin')
@@ -509,11 +535,46 @@ def get_farm_info(farmer_id):
 @app.route('/farmer/farmer_dashboard/<int:farmer_id>')
 @login_required
 def farmer_dashboard(farmer_id):
-    
     farm = Farm.query.filter_by(farmer_id=farmer_id).first()
-    products = Product.query.filter_by(farm_name=farm.farm_name)
+    products = Product.query.filter_by(farm_name=farm.farm_name).all()
     low_stock_products = [product for product in products if product.quantity < 5]
-    return render_template('farmer_dashboard.html',farm=farm, farmer_id=farmer_id, products=products, low_stock_products=low_stock_products)
+    order_items = []
+    for product in products:
+        orders = Order.query.join(OrderItem).filter(OrderItem.product_id == product.product_id).all()
+    orders = [order for order in orders if order.status == 'ordered']
+    order_items = [order_item for order in orders for order_item in order_items]
+    order_list = []
+    for order in orders:
+        if order is not None:
+            print(order.order_id)
+            order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+            if order_items is not None:
+                for order_item in order_items:
+                    product = Product.query.filter_by(product_id=order_item.product_id).first()
+                    order_list.append({
+                        "order_id": order.order_id,
+                        "product_id": order_item.product_id,
+                        "title": product.title,
+                        "price": product.price,
+                        "quantity": order_item.amount
+                    })
+    return render_template('farmer_dashboard.html',farm=farm, farmer_id=farmer_id, products=products, low_stock_products=low_stock_products, order_list=order_list)
+
+@app.route('/farmer/<int:farmer_id>/fulfill_order/<int:order_id>')
+@login_required
+def fulfill_order(farmer_id, order_id):
+    order = Order.query.get(order_id)
+    order.status = 'fulfilled'
+    db.session.commit()
+    return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
+
+@app.route('/farmer/<int:farmer_id>/products')
+@login_required
+def display_products(farmer_id):
+    farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    products = Product.query.filter_by(farm_name=farm.farm_name).all()
+    farm_name = farm.farm_name
+    return render_template('farm_products.html', products=products, farmer_id=farmer_id, farm_name=farm_name)
 
 @app.route('/farmer/farmer_dashboard/<int:farmer_id>', methods=['POST'])
 @login_required
@@ -562,6 +623,25 @@ def add_product(farmer_id):
         return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
     
     return render_template('add_product.html', farmer_id=farmer_id, products=products)
+
+@app.route('/farmer/<int:farmer_id>/orders', methods=['GET'])
+@login_required
+def farmer_orders(farmer_id):
+    farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    products = Product.query.filter_by(farm_name=farm.farm_name).all()
+    order_item = OrderItem.query.filter_by(product_id=products.product_id).all()
+    order = Order.query.filter_by(order_id=order_item.order_id).all()
+    order_list = []
+    for order_item in order_item:
+        product = Product.query.filter_by(product_id=order_item.product_id).first()
+        order_list.append({
+            "order_id": order.order_id,
+            "product_id": order_item.product_id,
+            "title": product.title,
+            "price": product.price,
+            "quantity": order_item.quantity
+        })
+    return jsonify(order_list), 200
 
 #BUYERS        
 @app.route('/register/buyer')
@@ -644,7 +724,7 @@ def order(buyer_id):
 @login_required
 def shopping_cart(buyer_id):
     grand_total = 0
-    order = Order.query.filter_by(buyer_id=buyer_id).first()
+    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
     if not order:
         order = Order(buyer_id=buyer_id, status='pending', preference='N/A')
         db.session.add(order)
@@ -698,24 +778,24 @@ def remove_from_cart(buyer_id, product_id):
     return redirect(url_for('shopping_cart', buyer_id=buyer.buyer_id))
     
 
-@app.route('/checkout/<int:buyer_id>', methods=['POST'])
+@app.route('/checkout/<int:order_id>')
 @login_required
-def checkout(buyer_id):
-    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+def checkout(order_id):
+    order = Order.query.filter_by(order_id=order_id).first()
     if not order:
         return jsonify({"message": "Order not found"}), 404
-    order.preference = 'ordered'
+    order.status = 'ordered'
     db.session.commit()
-    return jsonify({"message": "Checkout successful"}), 200
+    return redirect(url_for('index'))
 
 @app.route("/api/shopping_cart", methods=["GET"])
 @login_required
 def api_shopping_cart():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
-    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
     if not order:
-        order = Order(buyer_id=buyer_id, preference='pending')
+        order = Order(buyer_id=buyer_id, status='pending')
         db.session.add(order)
         db.session.commit()
     order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
@@ -736,10 +816,10 @@ def api_shopping_cart():
 def api_checkout():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
-    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
     if not order: 
         return jsonify({"message": "Order not found"}), 404
-    order.preference = 'ordered'
+    order.status = 'ordered'
     db.session.commit()
     return jsonify({"message": "Checkout successful"}), 200
 
@@ -750,9 +830,9 @@ def api_add_to_cart():
     product_id = data.get("product_id")
     buyer_id = data.get("buyer_id")
     amount = data.get("amount")
-    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
     if not order:
-        order = Order(buyer_id=buyer_id, preference='pending')
+        order = Order(buyer_id=buyer_id, status='pending')
         db.session.add(order)
         db.session.commit()
     order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
@@ -767,7 +847,7 @@ def api_remove_from_cart():
     buyer_id = data.get("buyer_id")
     order_item_id = data.get("order_item_id")
     amount = data.get("amount")
-    order = Order.query.filter_by(buyer_id=buyer_id, preference='pending').first()
+    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
     if not order:
         return jsonify({"message": "Order not found"}), 404
     order_item = OrderItem.query.filter_by(order_id=order.order_id, id=order_item_id).first()
@@ -988,6 +1068,8 @@ def api_register():
     email = data.get("email")
     if User.query.filter_by(email=email).first():
         return jsonify({"message": "Email already exists"}), 400
+    elif User.query.filter_by(username=username).first():
+        return jsonify({"message": "Username already exists"}), 400
     password = data.get("password")
     hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
     
@@ -1112,6 +1194,23 @@ def api_delete_product():
     db.session.delete(product)
     db.session.commit()
     return jsonify({"message": "Product deleted successfully"}), 200
+
+@app.route('/api/get-user-id/<role>/<int:role_id>', methods=['GET'])
+@login_required
+def get_user_id(role, role_id):
+    if role == "farmer":
+        farmer = Farmer.query.get(role_id)
+        if farmer:
+            user = User.query.filter_by(email=farmer.email).first()
+            if user:
+                return jsonify({"success": True, "user_id": user.user_id})
+    elif role == "buyer":
+        buyer = Buyer.query.get(role_id)
+        if buyer:
+            user = User.query.filter_by(email=buyer.email).first()
+            if user:
+                return jsonify({"success": True, "user_id": user.user_id})
+    return jsonify({"success": False, "message": "User not found"}), 404
     
 #Main
 if __name__ == '__main__':
