@@ -48,21 +48,22 @@
         .registration-container input[type="password"],
         .registration-container input[type="submit"],
         .registration-container select {
-            width: 100%;
+            width: 93%;
             padding: 0.75rem;
             margin: 0.5rem 0;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
         .registration-container input[type="submit"] {
-            background-color: var(--secondary-color);
+            background-color: var(--primary-color);
             color: white;
             border: none;
             cursor: pointer;
             font-weight: bold;
+            width:100%;
         }
         .registration-container input[type="submit"]:hover {
-            background-color: var(--primary-color);
+            background-color: var(--secondary-color);
         }
         .menu {
             position: absolute;
@@ -118,7 +119,11 @@
         <input type="text" id="farm_name" name="farm_name" required>
 
         <label for="crop_type">Crop Type:</label>
-        <input type="text" id="crop_type" name="crop_type" required>
+        <select id="crop_type" name="crop_type" required>
+            <option value="vegetables">Vegetables</option>
+            <option value="fruits">Fruits</option>
+            <option value="seeds">Seeds</option>
+        </select>
 
         <label for="location">Farm Location:</label>
         <input type="text" id="location" name="location" required>

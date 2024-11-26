@@ -27,25 +27,26 @@
         body {
             margin: 0;
             font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
         }
         /* Overall page style */
-        .dashboard {
+        .dashboard, .orders {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
         }
         /* Dashboard container style */
-        .dashboard-container {
-            width: 90%;
-            max-width: 600px;
+        .dashboard-container, .orders-container {
+            width: 80%;
             padding: 2rem;
             background-color: #ffffff;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .orders, .dashboard {
+            margin-top: 2rem;
         }
         .dashboard-container h2, .dashboard-container h3 {
             text-align: center;
@@ -60,12 +61,13 @@
         .product-table th, .product-table td {
             padding: 0.75rem;
             border: 1px solid #ddd;
-            text-align: left;
+            text-align: center;
         }
         .product-table th {
             background-color: #f2f2f2;
             font-weight: bold;
             color: #333;
+            text-align: center;
         }
         .product-table tr:nth-child(even) {
             background-color: #f9f9f9;
@@ -74,6 +76,7 @@
         .actions {
             display: flex;
             gap: 0.5rem;
+            justify-content: center;
         }
         .edit-btn, .delete-btn {
             padding: 0.5rem 1rem;
@@ -151,6 +154,16 @@
         .chat-button {
             padding: 0rem 1.5rem;
         }
+        .nav-link {
+            padding: 0rem 0.75rem;
+        }
+        .chat-button, .back {
+            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
+        }
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+        }
 
     </style>
 </head>
@@ -159,8 +172,13 @@
         <a class="navbar-brand" href="#">Farmer dashboard</a>
         <div class="nav-buttons">
             <a class="nav-link add-product-button" href="/farmer/{{farmer_id}}/add-product">Add product</a>
-            <a class="chat-button" href="/chats">Chat</a>
-            <a class="nav-link login-button" href="/">Home</a>
+            <a href="/chats" class="nav-link chat-button">
+                <img src="https://www.svgrepo.com/show/529481/chat-round-dots.svg" alt="Chat" width="30" height="30" />
+            </a>
+            <a class="nav-link back" onclick="history.back()">
+                <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
+            </a>
+            <a href="/" class="nav-link home-button">Home</a>
         </div>
     </nav>
     <div class="dashboard">
@@ -230,6 +248,44 @@
             {% endif %}
         </div>
     </div>
-
+    <div class="orders">
+        <div class="orders-container">
+            <h2>Pending orders</h2>
+                
+                <h3>Orders Information</h3>
+                <p><strong>Order ID:</strong> {{ farm.farm_name }}</p>
+                <p><strong>Buyer:</strong> {{ farm.location }}</p>
+                <p><strong>Amount:</strong> {{ farm.farm_size }} acres</p>
+                <p><strong>Address:</strong> {{ farm.crop_type }}</p>
+                {% if order_list %}
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Product Title</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order_item in order_list %}
+                        <tr>
+                            <td>{{ order_item.product_id }}</td>
+                            <td>{{ order_item.title }}</td>
+                            <td>${{ order_item.price }}</td>
+                            <td>{{ order_item.quantity }}</td>
+                            <td class="actions">
+                                <a href="{{ url_for('fulfill_order', farmer_id = farmer_id, order_id=order_item.order_id)}}" class="edit-btn">Fulfill</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                    <p>You have no pending orders.</p>
+                {% endif %}
+        </div>
+    </div>
 </body>
 </html>

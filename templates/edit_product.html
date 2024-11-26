@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product</title>
     <style>
-        /* Page layout and container styling */
+        :root {
+            --primary-color: #fc8282;
+            --secondary-color: #ff4747;
+            --background-light: #f3f3f3;
+            --text-color-dark: #333;
+            --text-color-light: #666;
+            --hover-highlight: #fcd7d7;
+            --white: #FFFFFF;
+        }
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -35,6 +43,7 @@
             font-weight: bold;
         }
         .edit-product-container input[type="text"],
+        .edit-product-container select,
         .edit-product-container input[type="number"] {
             width: 100%;
             padding: 0.75rem;
@@ -48,7 +57,7 @@
             width: 100%;
             padding: 0.75rem;
             margin-top: 1.5rem;
-            background-color: #4CAF50;
+            background-color: var(--primary-color);
             color: white;
             border: none;
             border-radius: 4px;
@@ -57,7 +66,20 @@
             text-align: center;
         }
         .save-btn:hover {
-            background-color: #45a049;
+            background-color: var(--secondary-color);
+        }
+        .back:hover {
+            text-decoration: underline;
+            color: var(--secondary-color)
+        }
+        a {
+            text-decoration: none;
+            display: block;
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--secondary-color);
+            text-decoration: none;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -70,7 +92,12 @@
         <input type="text" id="title" name="title" value="{{ product.title }}" required>
 
         <label for="category">Category:</label>
-        <input type="text" id="category" name="category" value="{{ product.category }}" required>
+        <!--<input type="text" id="category" name="category" value="{{ product.category }}" required>-->
+        <select id="category" name="category" required>
+            <option value="vegetables">Vegetables</option>
+            <option value="fruits">Fruits</option>
+            <option value="seeds">Seeds</option>
+        </select>
 
         <label for="price">Price:</label>
         <input type="number" id="price" name="price" step="0.01" value="{{ product.price }}" required>
@@ -82,10 +109,17 @@
         <input type="text" id="description" name="description" value="{{product.description}}" required></textarea>
 
         <label for="organic_certification">Organic Certification:</label>
-        <input type="number" id="organic_certification" name="organic_certification" value="{{product.organic_certification}}" required></textarea>
+        <!--<input type="number" id="organic_certification" name="organic_certification" value="{{product.organic_certification}}" required></textarea>-->
+        <select id="organic_certification" name="organic_certification" required>
+            <option type="number" value="0">No</option>
+            <option type="number "value="1">Yes</option>
+        </select>
 
         <button type="submit" class="save-btn">Save Changes</button>
     </form>
+    <div class="back">
+        <a href="{{ url_for('farmer_dashboard', farmer_id=farmer_id) }}">Back to Dashboard</a>
+    </div>
 </div>
 
 </body>
