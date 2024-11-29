@@ -5,24 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products</title>
     <style>
+        .form-group {
+            padding: 1rem;
+        }
+        .farm-display {
+            display: inline-block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 0rem 2rem;
+            color: var(--primary-color);
+        }
+        .farm-title {
+            background-color: var(--background-light);
+        }
+        .dashboard {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .dashboard-container {
+            max-width: 80%;
+            padding: 2rem 10rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
 <body>
     <nav class="navbar">
         <a class="navbar-brand" href="/">Online Farmer Market</a>
-        <div class="navbar-container">
-            <form class="form-inline my-2 my-lg-0" action="/search" method="get">
-                <input class="form-control mr-sm-2" type="search" name="query" placeholder="Search for products" aria-label="Search">
-                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
-            </form>
+        <div>
             <a class="nav-link back" onclick="history.back()">
                 <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
             </a>
         </div>
     </nav>
-
-<div class="products">
+    <div class="farm-title">
+        <p class="farm-display"></p>
+    </div>
+    <div class="dashboard">
+        <div class="dashboard-container">
+            <h3>Farm Information</h3>
+            <p><strong>Farm Name:</strong> {{ farm.farm_name }}</p>
+            <p><strong>Location:</strong> {{ farm.location }}</p>
+            <p><strong>Size:</strong> {{ farm.farm_size }} acres</p>
+            <p><strong>Crop Type:</strong> {{ farm.crop_type }}</p>
+        </div>
+    </div>
     <div class="product-container">
         <div class="container">
             <div class="row">
@@ -34,7 +67,7 @@
                             <p class="card-text">{{ product.description }}</p>
                             <p class="card-text">{{ product.farm_name }}</p>
                             <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
-                            {% if role == 'buyer' %}
+                            {% if role == 'buyer' or role == 'admin' %}
                                 <form method = "POST" action="/add_to_cart/{{ product.product_id }}">
                                     <div class="form-group">
                                         <label for="amount_{{ product.id }}">Amount:</label>
@@ -44,7 +77,6 @@
                                 </form>
                                 <div class="product-buttons">
                                     <a class="btn write-button" href="/message/{{ product.farm_name }}">Write to Seller</a>
-                                    <a class="btn write-button" href="/farmer/{{ product.farm_name }}/info">View Seller Information</a>
                                 </div>
                             {% endif %}
                         </div>
@@ -57,6 +89,11 @@
             </div>
         </div>
     </div>
-</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const farm = "{{ farm_name }}";
+        document.querySelector('.farm-display').textContent = `You are currently viewing ${farm}'s information`;
+    });
+</script>
 </body>
 </html>

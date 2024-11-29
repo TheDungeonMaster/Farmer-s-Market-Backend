@@ -1,0 +1,200 @@
+:root {
+    --primary-color: #fc8282;
+    --secondary-color: #ff4747;
+    --background-light: #f3f3f3;
+    --text-color-dark: #333;
+    --text-color-light: #666;
+    --hover-highlight: #fcd7d7;
+    --white: #FFFFFF;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--background-light);
+}
+
+/*NAVIGATION BAR*/
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem;
+    background-color: var(--secondary-color);
+}
+.navbar a {
+    color: var(--white);
+    text-decoration: none;
+    font-size: 1.25rem;
+}
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.nav-item {
+    list-style-type: none;
+}
+.nav-link {
+    padding: 0rem 0.75rem;
+}
+.nav-buttons {
+    display: flex;
+    align-items: center;
+}
+.navbar-container {
+    display:flex;
+    align-items: center;
+    padding-bottom: 0.75rem;
+}
+
+/*PRODUCT LISTING*/
+.product-container {
+    padding: 2rem;
+    background-color: var(--background-light);
+}
+.product-container .card {
+    background-color: var(--white);
+    border: 1px solid var(--secondary-color);
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px var(--shadow-light);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    width: 100%;
+}
+.product-container .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+}
+.card-body {
+    padding: 1rem;
+    text-align: center;
+}
+.card-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 1rem 0
+}
+.card-text {
+    margin: 0.5rem 0;
+    color: var(--text-color-dark);
+}
+.card-text strong {
+    color: var(--secondary-color);
+}
+.col-md-4 {
+    display: flex;
+    padding-right: 15px;
+    padding-left: 15px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem;
+}
+.row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    justify-content: space-around;
+    align-items: center;
+    justify-items: center;
+}
+.product-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-top: 1rem;
+}
+.chat-button, .cart-button, .logout-button {
+    filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
+}
+
+/*Search Bar*/
+.mr-sm-2 {
+    padding: 6px;
+    border: none;
+    margin-right: 16px;
+    font-size: 17px;
+}
+
+.btn-outline-success {
+    color: var(--secondary-color);
+    border: 2px solid var(--secondary-color);
+    padding: 0.5rem 1rem;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-outline-success:hover {
+    background-color: var(--secondary-color);
+    color: var(--white);
+}
+.btn {
+    margin-top: 1rem;
+}
+
+/*Buttons*/
+.button-container a {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    text-decoration: none;
+    color: var(--white);
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-weight: bold;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.button-container a:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-3px);
+}
+
+/* Back button */
+.back {
+    padding: 0rem 0.75rem;
+    filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
+}
+
+/* Home button */
+.menu {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+.menu a {
+    color: var(--secondary-color);
+    font-weight: bold;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--secondary-color);
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+.menu a:hover {
+    background-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .categories {
+        flex-direction: column;
+    }
+
+    .category-button-container a {
+        width: 90%;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .product-container .row {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+}

@@ -5,22 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farmer Dashboard</title>
     <style>
-        :root {
-            --primary-color: #fc8282;
-            --secondary-color: #ff4747;
-            --background-light: #f3f3f3;
-            --text-color-dark: #333;
-            --text-color-light: #666;
-            --hover-highlight: #fcd7d7;
-            --white: #FFFFFF;
-        }
-
-        /* General Styling */
-
         h1, h5 {
             color: var(--primary-color);
         }
-
+        h1 {
+            text-align: center;
+        }
         p {
             color: var(--text-color-light);
         }
@@ -37,7 +27,6 @@
             align-items: center;
             margin: 0;
         }
-        /* Dashboard container style */
         .dashboard-container, .orders-container {
             width: 80%;
             padding: 2rem;
@@ -52,7 +41,6 @@
             text-align: center;
             color: #333;
         }
-        /* Table styling */
         .product-table {
             width: 100%;
             border-collapse: collapse;
@@ -72,7 +60,6 @@
         .product-table tr:nth-child(even) {
             background-color: #f9f9f9;
         }
-        /* Action buttons (Edit and Delete) */
         .actions {
             display: flex;
             gap: 0.5rem;
@@ -113,52 +100,8 @@
             padding: 0;
             margin: 0;
         }
-        .menu {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-        .menu a {
-            color: #4CAF50;
-            font-weight: bold;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border: 2px solid #4CAF50;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .nav-item {
-            list-style-type: none;
-        }
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1rem;
-            background-color: var(--secondary-color);
-        }
-
-        .navbar a {
-            color: var(--white);
-            text-decoration: none;
-            font-size: 1.25rem;
-        }
-
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
         .chat-button {
             padding: 0rem 1.5rem;
-        }
-        .nav-link {
-            padding: 0rem 0.75rem;
-        }
-        .chat-button, .back {
-            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
         }
         .nav-buttons {
             display: flex;
@@ -166,10 +109,11 @@
         }
 
     </style>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
 <body>
     <nav class="navbar nav-container">
-        <a class="navbar-brand" href="#">Farmer dashboard</a>
+        <a class="navbar-brand" href="/">Online Farmer Market</a>
         <div class="nav-buttons">
             <a class="nav-link add-product-button" href="/farmer/{{farmer_id}}/add-product">Add product</a>
             <a href="/chats" class="nav-link chat-button">
@@ -178,11 +122,11 @@
             <a class="nav-link back" onclick="history.back()">
                 <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
             </a>
-            <a href="/" class="nav-link home-button">Home</a>
         </div>
     </nav>
     <div class="dashboard">
         <div class="dashboard-container">
+            <h1>Farmer dashboard</h1>
             <h2>Welcome</h2>
             
             <h3>Farm Information</h3>

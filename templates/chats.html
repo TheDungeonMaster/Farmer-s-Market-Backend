@@ -5,43 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Chats</title>
     <style>
-        :root {
-            --primary-color: #fc8282;
-            --secondary-color: #ff4747;
-            --background-light: #f3f3f3;
-            --text-color-dark: #333;
-            --text-color-light: #666;
-            --hover-highlight: #fcd7d7;
-            --white: #FFFFFF;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1rem;
-            background-color: var(--secondary-color);
-        }
-
-        .navbar a {
-            color: var(--white);
-            text-decoration: none;
-            font-size: 1.25rem;
-        }
-
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
         .chat-list-container {
             display: flex;
             flex-direction: column;
@@ -96,12 +59,8 @@
             background-color: var(--secondary-color);
         }
 
-        .back {
-            padding: 0rem 0.75rem;
-            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
-        }
-
     </style>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
 <body>
     <nav class="navbar">
