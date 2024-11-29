@@ -5,21 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Farmer's Market</title>
     <style>
-        :root {
-            --primary-color: #fc5c5c;
-            --secondary-color: #ff4747;
-            --background-light: #f3f3f3;
-            --text-color-dark: #333;
-            --text-color-light: #666;
-            --hover-highlight: #fcd7d7;
-            --white: #FFFFFF;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
         h1, h5 {
             color: var(--primary-color);
         }
@@ -27,30 +12,6 @@
         p {
             color: var(--text-color-light);
         }
-
-        /* Navbar */
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1rem;
-            background-color: var(--secondary-color);
-        }
-
-        .navbar a {
-            color: var(--white);
-            text-decoration: none;
-            font-size: 1.25rem;
-        }
-
-        .navbar-brand {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-
         .username {
             display: inline-block;
             font-size: 1.5rem;
@@ -71,30 +32,11 @@
             color: var(--text-color-dark);
         }
 
-        .button-container a {
-            display: inline-block;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            text-decoration: none;
-            color: var(--white);
-            background-color: var(--primary-color);
-            border-radius: 5px;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            font-weight: bold;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .button-container a:hover {
-            background-color: var(--secondary-color);
-            transform: translateY(-3px);
-        }
-
         /* Categories Section */
         .categories-container {
             background-color: var(--background-light);
             padding: 2rem 0;
         }
-
         .categories {
             display: flex;
             justify-content: space-evenly;
@@ -104,7 +46,6 @@
             flex-wrap: wrap;
             gap:2rem;
         }
-
         .category-button-container a {
             display: flex;
             padding: 1.5rem;
@@ -119,137 +60,30 @@
             box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
             flex: 1;
         }
-
         .category-button-container a:hover {
             background-color: var(--hover-highlight);
             transform: translateY(-3px);
         }
 
-        /* Search Bar */
-        .mr-sm-2 {
-            padding: 6px;
-            border: none;
-            margin-right: 16px;
-            font-size: 17px;
-        }
-
-        .btn-outline-success {
-            color: var(--secondary-color);
-            border: 2px solid var(--secondary-color);
-            padding: 0.5rem 1rem;
-            background-color: white;
-            cursor: pointer;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-
-        .btn-outline-success:hover {
-            background-color: var(--secondary-color);
-            color: var(--white);
-        }
-
-        .nav-item {
-            list-style-type: none;
-        }
-
-        .nav-link {
-            padding: 0rem 0.75rem;
-        }
-        .nav-buttons {
-            display: flex;
-            align-items: center;
-        }
-
-        .chat-button, .cart-button, .logout-button {
-            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
-        }
-
-        .product-container {
-            padding: 2rem;
-            background-color: var(--white);
-        }
-
-        .product-container .card {
-            background-color: var(--white);
-            border: 1px solid var(--secondary-color);
-            border-radius: 10px;
-            box-shadow: 0px 4px 8px var(--shadow-light);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            width: 100%;
-        }
-
-        .product-container .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .card-body {
-            padding: 1rem;
-            text-align: center;
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin: 1rem 0
-        }
-
-        .card-text {
-            margin: 0.5rem 0;
-            color: var(--text-color-dark);
-        }
-
-        .card-text strong {
-            color: var(--secondary-color);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .categories {
-                flex-direction: column;
-            }
-
-            .category-button-container a {
-                width: 90%;
-                margin-bottom: 1rem;
-                text-align: center;
-            }
-
-            .product-container .row {
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-            }
-        }
         .account-display {
             background-color: var(--background-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .account-display a {
+            color: var(--primary-color);
+            font-size: 22px;
+            font-weight: bold;
+            margin-right: 2rem;
         }
         .categories-title{
             color: var(--secondary-color);
             text-align:center;
         }
-        .col-md-4 {
-            display: flex;
-            padding-right: 15px;
-            padding-left: 15px;
-            box-sizing: border-box;
-            width: 100%;
-        }
         
-        .mb-4 {
-            margin-bottom: 1.5rem;
-        }
-        .row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            justify-content: space-around;
-            align-items: center;
-            justify-items: center;
-        }
-        .btn {
-            margin-top: 1rem;
-        }
     </style>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
 <body>
     <nav class="navbar nav-container">
@@ -277,6 +111,9 @@
     </nav>
     <div class="account-display">
         <p class="username" style="display: none;"></p>
+        {% if role == 'buyer' %}
+            <a href="/order-history/{{ buyer_id }}">View order history</a>
+        {% endif %}
     </div>
     <div class="home-body">
         <div class="welcome-section">
@@ -302,9 +139,9 @@
             </div>
         </div>
     </div>
-    <nav class="navbar navbar-container">
+    <nav class="navbar">
         <a class="navbar-brand" href="/products">Latest Products</a>
-        <div>
+        <div class="navbar-container">
             <form class="form-inline my-2 my-lg-0" action="/search" method="get">
                 <input class="form-control mr-sm-2" type="search" name="query" placeholder="Search for products" aria-label="Search">
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
@@ -330,7 +167,10 @@
                                     </div>
                                     <button type="submit" class="btn btn-primary mt-2">Add to Cart</button>
                                 </form>
-                                <a class="btn write-button" href="/message/{{ product.farm_name }}" style="display: none;">Write to Seller</a>
+                                <div class="product-buttons">
+                                    <a class="btn write-button" href="/message/{{ product.farm_name }}" style="display: none;">Write to Seller</a>
+                                    <a class="btn write-button" href="/farmer/{{ product.farm_name }}/info">View Seller Information</a>
+                                </div>
                             {% endif %}
                         </div>
                     </div>

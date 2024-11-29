@@ -348,16 +348,10 @@ def banned_buyers():
 def approve_farmer(farmer_id):
     if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"message": "Unauthorized"}), 403
-
     farmer = Farmer.query.get(farmer_id)
     if farmer:
         farmer.status = "approved"
         db.session.commit()
-
-        # Send an approval notification email
-        # msg = Message('Account Approved', recipients=[user.email])
-        # msg.body = 'Your farmer account has been approved and is now active.'
-        # mail.send(msg)
 
         return jsonify({"message": "Farmer approved"}), 200
     return jsonify({"message": "Farmer not found"}), 404
@@ -367,21 +361,12 @@ def approve_farmer(farmer_id):
 def reject_farmer(farmer_id):
     if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"message": "Unauthorized"}), 403
-
     farmer = Farmer.query.get(farmer_id)
     if farmer:
         farmer.status = "rejected"
         user = User.query.filter_by(email=farmer.email).first()
         user.status = 'banned'
         db.session.commit()
-
-        # Optionally, send a rejection notification email
-        # user = User.query.get(farmer.farmer_id)
-        # msg = Message('Account Rejected', recipients=[user.email])
-        # msg.body = 'Your farmer account registration has been rejected.'
-        # mail.send(msg)
-
-        # return jsonify({"message": "Farmer rejected"})
         return jsonify({"message": "Farmer rejected"}), 200
     return jsonify({"message": "Farmer not found"}), 404
 
@@ -564,17 +549,33 @@ def farmer_dashboard(farmer_id):
 @login_required
 def fulfill_order(farmer_id, order_id):
     order = Order.query.get(order_id)
+    order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+    for order_item in order_items:
+        product = Product.query.filter_by(product_id=order_item.product_id).first()
+        product.quantity -= order_item.amount
+        db.session.commit()
     order.status = 'fulfilled'
     db.session.commit()
     return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
 
-@app.route('/farmer/<int:farmer_id>/products')
+@app.route('/farmer/<int:farmer_id>/info')
 @login_required
-def display_products(farmer_id):
+def display_info_id(farmer_id):
     farm = Farm.query.filter_by(farmer_id=farmer_id).first()
     products = Product.query.filter_by(farm_name=farm.farm_name).all()
     farm_name = farm.farm_name
-    return render_template('farm_products.html', products=products, farmer_id=farmer_id, farm_name=farm_name)
+    return render_template('farmer_info.html', products=products, farmer_id=farmer_id, farm_name=farm_name, farm = farm)
+
+@app.route('/farmer/<string:farm_name>/info')
+@login_required
+def display_info_product(farm_name):
+    role = current_user.role
+    farm = Farm.query.filter_by(farm_name=farm_name).first()
+    farmer = Farmer.query.filter_by(farmer_id=farm.farmer_id).first()
+    farmer_id = farmer.farmer_id
+    products = Product.query.filter_by(farm_name=farm.farm_name).all()
+    farm_name = farm.farm_name
+    return render_template('farmer_info.html', products=products, farmer_id=farmer_id, farm_name=farm_name, farm = farm, role = role)
 
 @app.route('/farmer/farmer_dashboard/<int:farmer_id>', methods=['POST'])
 @login_required
@@ -730,18 +731,19 @@ def shopping_cart(buyer_id):
         db.session.add(order)
         db.session.commit()
         return render_template('shopping_cart.html', order_list=[], grand_total=0)
-    order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+    orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
     order_list = []
-    for order_item in order_items:
-        product = Product.query.filter_by(product_id=order_item.product_id).first()
-        total_price = product.price * order_item.amount
+    for orderitem in orderitems:
+        product = Product.query.filter_by(product_id=orderitem.product_id).first()
+        total_price = product.price * orderitem.amount
         grand_total += total_price
         order_list.append({
+            "orderitem_id": orderitem.id,
             "order_id": order.order_id,
-            "product_id": order_item.product_id,
+            "product_id": orderitem.product_id,
             "title": product.title,
             "price": product.price,
-            "amount": order_item.amount
+            "amount": orderitem.amount
         })
     return render_template('shopping_cart.html', order_list=order_list, grand_total=grand_total, buyer_id=buyer_id)
 
@@ -759,25 +761,26 @@ def add_to_cart(product_id):
     order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
     db.session.add(order_item)
     db.session.commit()
-    return redirect(url_for('shopping_cart', buyer_id=buyer.buyer_id))
+    return redirect(request.referrer)
 
-@app.route('/remove_from_cart/<int:buyer_id>/<int:product_id>', methods=['DELETE', 'POST'])
+@app.route('/remove_from_cart/<int:orderitem_id>', methods=['DELETE', 'POST'])
 @login_required
-def remove_from_cart(buyer_id, product_id):
+def remove_from_cart(orderitem_id):
     amount = request.form.get('amount')
     amount = int(amount)
-    buyer = Buyer.query.filter_by(email=current_user.email).first()
-    order = Order.query.filter_by(buyer_id=buyer.buyer_id, status='pending').first()
+    orderitem = OrderItem.query.filter_by(id=orderitem_id).first()
+    order = Order.query.filter_by(order_id=orderitem.order_id).first()
     if not order:
         return jsonify({"message": "Order not found"}), 404
-    order_item = OrderItem.query.filter_by(order_id=order.order_id, product_id=product_id).first()
-    order_item.amount -= amount
-    if order_item.amount <= 0:
-        db.session.delete(order_item)
+    buyer_id = order.buyer_id
+    if not orderitem:
+        return jsonify({"message": "Order item not found"}), 404
+    orderitem.amount -= amount
+    if orderitem.amount <= 0:
+        db.session.delete(orderitem)
     db.session.commit()
-    return redirect(url_for('shopping_cart', buyer_id=buyer.buyer_id))
+    return redirect(url_for('shopping_cart', buyer_id=buyer_id))
     
-
 @app.route('/checkout/<int:order_id>')
 @login_required
 def checkout(order_id):
@@ -787,6 +790,22 @@ def checkout(order_id):
     order.status = 'ordered'
     db.session.commit()
     return redirect(url_for('index'))
+
+@app.route('/order-history/<int:buyer_id>')
+@login_required
+def order_history(buyer_id):
+    orders = Order.query.filter_by(buyer_id=buyer_id).all()
+    order_details = []
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        order_total_price = 0
+        products = []
+        for orderitem in orderitems:
+            products.append({'product':Product.query.filter_by(product_id=orderitem.product_id).first(), 'orderitem':orderitem})
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            order_total_price += product.price * orderitem.amount
+        order_details.append({'order':order, 'products':products, 'orderitems':orderitems, 'order_total_price':order_total_price})
+    return render_template('order_history.html', orders=orders, order_details=order_details)
 
 @app.route("/api/shopping_cart", methods=["GET"])
 @login_required

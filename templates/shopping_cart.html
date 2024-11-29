@@ -5,41 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shopping Cart</title>
     <style>
-        :root {
-            --primary-color: #fc8282;
-            --secondary-color: #ff4747;
-            --background-light: #f3f3f3;
-            --text-color-dark: #333;
-            --text-color-light: #666;
-            --hover-highlight: #fcd7d7;
-            --white: #FFFFFF;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
         h1, h2 {
             color: var(--primary-color);
         }
-
-        .navbar {
-            position: sticky;
-            top: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 1rem;
-            background-color: var(--secondary-color);
-            color: var(--white);
-        }
-
-        .navbar a {
-            color: var(--white);
-            text-decoration: none;
-            font-size: 1.25rem;
-        }
-
         .cart-container {
             max-width: 1200px;
             margin: 2rem auto;
@@ -47,7 +15,6 @@
             background-color: var(--background-light);
             border-radius: 8px;
         }
-
         .cart-item {
             display: flex;
             justify-content: space-between;
@@ -55,7 +22,6 @@
             padding: 1rem;
             border-bottom: 1px solid var(--text-color-light);
         }
-
         .cart-item:last-child {
             border-bottom: none;
         }
@@ -89,15 +55,12 @@
         .checkout-btn:hover {
             background-color: var(--secondary-color);
         }
-        .back {
-            padding: 0rem 0.75rem;
-            filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%) contrast(102%);
-        }
     </style>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
 <body>
     <nav class="navbar">
-        <a href="/">Online Farmer Market</a>
+        <a class="navbar-brand" href="/">Online Farmer Market</a>
         <div>
             <a class="nav-link back" onclick="history.back()">
                 <img src="https://www.svgrepo.com/show/101168/go-back-arrow.svg" alt="Go back" width="50" height="30" />
@@ -113,7 +76,7 @@
                 <div>
                     <h4>{{ item.title }}</h4>
                     <p>Price: ${{ item.price }} x {{ item.amount }}</p>
-                    <form method="POST" action="/remove_from_cart/{{ buyer_id }}/{{ item.product_id }}" class="remove-form">
+                    <form method="POST" action="/remove_from_cart/{{ item.orderitem_id }}" class="remove-form">
                         <input type="hidden" name="_method" value="DELETE">
                         <div class="form-group">
                             <label for="remove_amount_{{ item.product_id }}">Amount to Remove:</label>
