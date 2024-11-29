@@ -415,7 +415,8 @@
                                         ...
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="#" onclick="writeToFarmer(${approved_farmer.farmer_id})">Write to Farmer</a>
+                                        <a class="dropdown-item" href="/message/<int:farmer_id>" onclick="writeToFarmer(${approved_farmer.farmer_id})">Write to Farmer</a>
+                                        <a class="dropdown-item" href="/farmer/${approved_farmer.farmer_id}/info">View Info about Farmer</a>
                                         <a class="dropdown-item text-danger" href="#" onclick="banFarmer(${approved_farmer.farmer_id})">Ban Farmer</a>
                                     </div>
                                 </div>
