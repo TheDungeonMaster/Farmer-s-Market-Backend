@@ -42,9 +42,10 @@
             color: #333;
         }
         .product-table {
-            width: 100%;
+            width: 90%;
             border-collapse: collapse;
             margin-top: 1.5rem;
+            margin: auto;
         }
         .product-table th, .product-table td {
             padding: 0.75rem;
@@ -205,6 +206,7 @@
                 <table class="product-table">
                     <thead>
                         <tr>
+                            <th>Order ID</th>
                             <th>Product ID</th>
                             <th>Product Title</th>
                             <th>Price</th>
@@ -215,6 +217,7 @@
                     <tbody>
                         {% for order_item in order_list %}
                         <tr>
+                            <td>{{ order_item.order_id }}</td>
                             <td>{{ order_item.product_id }}</td>
                             <td>{{ order_item.title }}</td>
                             <td>${{ order_item.price }}</td>

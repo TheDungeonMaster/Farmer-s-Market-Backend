@@ -71,32 +71,34 @@
     <div class="cart-container">
         <h1>Your Shopping Cart</h1>
         {% if order_list %}
-            {% for item in order_list %}
-            <div class="cart-item">
-                <div>
-                    <h4>{{ item.title }}</h4>
-                    <p>Price: ${{ item.price }} x {{ item.amount }}</p>
-                    <form method="POST" action="/remove_from_cart/{{ item.orderitem_id }}" class="remove-form">
-                        <input type="hidden" name="_method" value="DELETE">
-                        <div class="form-group">
-                            <label for="remove_amount_{{ item.product_id }}">Amount to Remove:</label>
-                            <input type="number" id="remove_amount_{{ item.product_id }}" name="amount" class="form-control" min="1" max="{{ item.amount }}" value="1" required>
-                        </div>
-                        <button type="submit" class="btn btn-danger mt-2">Remove</button>
-                    </form>
+            {% for orderitem_list in order_list %}
+                {% for item in orderitem_list %}
+                <div class="cart-item">
+                    <div>
+                        <h4>{{ item.title }}</h4>
+                        <p>Price: ${{ item.price }} x {{ item.amount }}</p>
+                        <form method="POST" action="/remove_from_cart/{{ item.orderitem_id }}" class="remove-form">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <div class="form-group">
+                                <label for="remove_amount_{{ item.product_id }}">Amount to Remove:</label>
+                                <input type="number" id="remove_amount_{{ item.product_id }}" name="amount" class="form-control" min="1" max="{{ item.amount }}" value="1" required>
+                            </div>
+                            <button type="submit" class="btn btn-danger mt-2">Remove</button>
+                        </form>
+                    </div>
+                    <div>
+                        <p><strong>Total: ${{ item.price * item.amount }}</strong></p>
+                    </div>
                 </div>
-                <div>
-                    <p><strong>Total: ${{ item.price * item.amount }}</strong></p>
-                </div>
-            </div>
+                {% endfor %}
             {% endfor %}
-            <div class="total">
-                Grand Total: ${{ grand_total }}
-            </div>
+                <div class="total">
+                    Grand Total: ${{ grand_total }}
+                </div>
             <div>
                 
             </div>
-            <a href="/checkout/{{ order_list[0].order_id }}" class="checkout-btn">Proceed to Checkout</a>
+            <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
         {% else %}
             <p>Your shopping cart is empty. <a href="/products">Continue Shopping</a></p>
         {% endif %}

@@ -113,6 +113,7 @@ class Order(db.Model):
     order_date = db.Column(db.DateTime, default=datetime.utcnow)
     preference = db.Column(db.String(100))
     buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.buyer_id'))
+    farmer_id = db.Column(db.Integer, db.ForeignKey('farmer.farmer_id'))
     
 class OrderItem(db.Model):
     __tablename__ = 'orderitem'
@@ -520,29 +521,22 @@ def get_farm_info(farmer_id):
 @app.route('/farmer/farmer_dashboard/<int:farmer_id>')
 @login_required
 def farmer_dashboard(farmer_id):
+    orders = Order.query.filter_by(farmer_id=farmer_id, status='ordered').all()
     farm = Farm.query.filter_by(farmer_id=farmer_id).first()
     products = Product.query.filter_by(farm_name=farm.farm_name).all()
     low_stock_products = [product for product in products if product.quantity < 5]
-    order_items = []
-    for product in products:
-        orders = Order.query.join(OrderItem).filter(OrderItem.product_id == product.product_id).all()
-    orders = [order for order in orders if order.status == 'ordered']
-    order_items = [order_item for order in orders for order_item in order_items]
     order_list = []
     for order in orders:
-        if order is not None:
-            print(order.order_id)
-            order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
-            if order_items is not None:
-                for order_item in order_items:
-                    product = Product.query.filter_by(product_id=order_item.product_id).first()
-                    order_list.append({
-                        "order_id": order.order_id,
-                        "product_id": order_item.product_id,
-                        "title": product.title,
-                        "price": product.price,
-                        "quantity": order_item.amount
-                    })
+        order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+        for order_item in order_items:
+            product = Product.query.filter_by(product_id=order_item.product_id).first()
+            order_list.append({
+                "order_id": order.order_id,
+                "product_id": order_item.product_id,
+                "title": product.title,
+                "price": product.price,
+                "quantity": order_item.amount
+            })
     return render_template('farmer_dashboard.html',farm=farm, farmer_id=farmer_id, products=products, low_stock_products=low_stock_products, order_list=order_list)
 
 @app.route('/farmer/<int:farmer_id>/fulfill_order/<int:order_id>')
@@ -630,18 +624,20 @@ def add_product(farmer_id):
 def farmer_orders(farmer_id):
     farm = Farm.query.filter_by(farmer_id=farmer_id).first()
     products = Product.query.filter_by(farm_name=farm.farm_name).all()
-    order_item = OrderItem.query.filter_by(product_id=products.product_id).all()
-    order = Order.query.filter_by(order_id=order_item.order_id).all()
-    order_list = []
-    for order_item in order_item:
-        product = Product.query.filter_by(product_id=order_item.product_id).first()
-        order_list.append({
-            "order_id": order.order_id,
-            "product_id": order_item.product_id,
-            "title": product.title,
-            "price": product.price,
-            "quantity": order_item.quantity
-        })
+    for product in products:
+        order_items = OrderItem.query.filter_by(product_id=product.product_id).all()
+        for order_item in order_items:
+            orders = Order.query.filter_by(order_id=order_item.order_id, status='ordered').all()
+            for order in orders:
+                order_list = []
+                product = Product.query.filter_by(product_id=order_item.product_id).first()
+                order_list.append({
+                    "order_id": order.order_id,
+                    "product_id": order_item.product_id,
+                    "title": product.title,
+                    "price": product.price,
+                    "quantity": order_item.amount
+                })
     return jsonify(order_list), 200
 
 #BUYERS        
@@ -725,37 +721,40 @@ def order(buyer_id):
 @login_required
 def shopping_cart(buyer_id):
     grand_total = 0
-    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
-    if not order:
-        order = Order(buyer_id=buyer_id, status='pending', preference='N/A')
-        db.session.add(order)
-        db.session.commit()
+    orders = Order.query.filter_by(buyer_id=buyer_id, status='pending').all()
+    if not orders:
         return render_template('shopping_cart.html', order_list=[], grand_total=0)
-    orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
     order_list = []
-    for orderitem in orderitems:
-        product = Product.query.filter_by(product_id=orderitem.product_id).first()
-        total_price = product.price * orderitem.amount
-        grand_total += total_price
-        order_list.append({
-            "orderitem_id": orderitem.id,
-            "order_id": order.order_id,
-            "product_id": orderitem.product_id,
-            "title": product.title,
-            "price": product.price,
-            "amount": orderitem.amount
-        })
-    return render_template('shopping_cart.html', order_list=order_list, grand_total=grand_total, buyer_id=buyer_id)
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        orderitem_list = []
+        for orderitem in orderitems:
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            total_price = product.price * orderitem.amount
+            grand_total += total_price
+            orderitem_list.append({
+                "orderitem_id": orderitem.id,
+                "order_id": order.order_id,
+                "product_id": orderitem.product_id,
+                "title": product.title,
+                "price": product.price,
+                "amount": orderitem.amount
+            })
+        order_list.append(orderitem_list)
+    print(order_list)
+    return render_template('shopping_cart.html', orders = orders, order_list=order_list, grand_total=grand_total, buyer_id=buyer_id)
 
 @app.route('/add_to_cart/<int:product_id>', methods=['POST'])
 @login_required
 def add_to_cart(product_id):
     amount = request.form.get('amount')
-    print(amount)
     buyer = Buyer.query.filter_by(email=current_user.email).first()
-    order = Order.query.filter_by(buyer_id=buyer.buyer_id, status='pending').first()
+    product = Product.query.filter_by(product_id=product_id).first()
+    farm = Farm.query.filter_by(farm_name=product.farm_name).first()
+    farmer_id = farm.farmer_id
+    order = Order.query.filter_by(buyer_id=buyer.buyer_id, farmer_id=farmer_id, status='pending').first()
     if not order:
-        order = Order(buyer_id=buyer.buyer_id, status='pending', preference='N/A')
+        order = Order(buyer_id=buyer.buyer_id, farmer_id=farmer_id, status='pending', preference='N/A')
         db.session.add(order)
         db.session.commit()
     order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
@@ -781,13 +780,15 @@ def remove_from_cart(orderitem_id):
     db.session.commit()
     return redirect(url_for('shopping_cart', buyer_id=buyer_id))
     
-@app.route('/checkout/<int:order_id>')
+@app.route('/checkout')
 @login_required
-def checkout(order_id):
-    order = Order.query.filter_by(order_id=order_id).first()
-    if not order:
-        return jsonify({"message": "Order not found"}), 404
-    order.status = 'ordered'
+def checkout():
+    buyer = Buyer.query.filter_by(email=current_user.email).first()
+    orders = Order.query.filter_by(buyer_id=buyer.buyer_id, status='pending').all()
+    if not orders:
+        return jsonify({"message": "Orders not found"}), 404
+    for order in orders:
+        order.status = 'ordered'
     db.session.commit()
     return redirect(url_for('index'))
 
@@ -896,6 +897,18 @@ def message_farm(farm_name):
 @app.route('/message/<int:user_id>')
 def message_user(user_id):
     other_user = User.query.filter_by(user_id=user_id).first()
+    chatroom = Chatroom.query.filter_by(user_1=current_user.user_id, user_2=other_user.user_id).first()
+    if not chatroom:
+        chatroom = Chatroom(user_1=current_user.user_id, user_2=other_user.user_id)
+        db.session.add(chatroom)
+        db.session.commit()
+    chatroom_id = chatroom.chatroom_id
+    return redirect(url_for('chatroom', chatroom_id=chatroom_id))
+
+@app.route('/message/<int:farmer_id>')
+def message_user_farmer(farmer_id):
+    farmer = Farmer.query.filter_by(farmer_id=farmer_id).first()
+    other_user = User.query.filter_by(email=farmer.email).first()
     chatroom = Chatroom.query.filter_by(user_1=current_user.user_id, user_2=other_user.user_id).first()
     if not chatroom:
         chatroom = Chatroom(user_1=current_user.user_id, user_2=other_user.user_id)
