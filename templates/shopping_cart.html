@@ -70,7 +70,7 @@
 
     <div class="cart-container">
         <h1>Your Shopping Cart</h1>
-        {% if order_list %}
+        {% if grand_total > 0 %}
             {% for orderitem_list in order_list %}
                 {% for item in orderitem_list %}
                 <div class="cart-item">
