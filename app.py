@@ -191,18 +191,9 @@ def setup_admin():
 @app.route('/admin')
 @login_required
 def admin():
-    print(current_user.role)
-    if current_user.email == 'admin@mail.com':
-        return render_template('admin.html')
-    else:
+    if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"success": False, "message": "Unauthorized"}), 403
-    return render_template('moderator.html')
-
-@app.route('/moderator', methods=['GET'])
-@login_required
-def moderator():
-    print(current_user.role)
-    return render_template('moderator.html')
+    return render_template('admin.html', role=current_user.role)
 
 @app.route('/delete-user/<int:user_id>', methods=['DELETE'])
 @login_required
@@ -768,12 +759,12 @@ def remove_from_cart(orderitem_id):
     amount = request.form.get('amount')
     amount = int(amount)
     orderitem = OrderItem.query.filter_by(id=orderitem_id).first()
+    if not orderitem:
+        return jsonify({"message": "Order item not found"}), 404
     order = Order.query.filter_by(order_id=orderitem.order_id).first()
     if not order:
         return jsonify({"message": "Order not found"}), 404
     buyer_id = order.buyer_id
-    if not orderitem:
-        return jsonify({"message": "Order item not found"}), 404
     orderitem.amount -= amount
     if orderitem.amount <= 0:
         db.session.delete(orderitem)
@@ -789,7 +780,7 @@ def checkout():
         return jsonify({"message": "Orders not found"}), 404
     for order in orders:
         order.status = 'ordered'
-    db.session.commit()
+        db.session.commit()
     return redirect(url_for('index'))
 
 @app.route('/order-history/<int:buyer_id>')
@@ -813,22 +804,27 @@ def order_history(buyer_id):
 def api_shopping_cart():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
-    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
-    if not order:
-        order = Order(buyer_id=buyer_id, status='pending')
-        db.session.add(order)
-        db.session.commit()
-    order_items = OrderItem.query.filter_by(order_id=order.order_id).all()
+    grand_total = 0
+    orders = Order.query.filter_by(buyer_id=buyer_id, status='pending').all()
+    if not orders:
+        return jsonify([]), 200
     order_list = []
-    for order_item in order_items:
-        product = Product.query.filter_by(product_id=order_item.product_id).first()
-        order_list.append({
-            "order_id": order.order_id,
-            "product_id": order_item.product_id,
-            "title": product.title,
-            "price": product.price,
-            "amount": order_item.amount
-        })
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        orderitem_list = []
+        for orderitem in orderitems:
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            total_price = product.price * orderitem.amount
+            grand_total += total_price
+            orderitem_list.append({
+                "orderitem_id": orderitem.id,
+                "order_id": order.order_id,
+                "product_id": orderitem.product_id,
+                "title": product.title,
+                "price": product.price,
+                "amount": orderitem.amount
+            })
+        order_list.append(orderitem_list)
     return jsonify(order_list), 200
 
 @app.route("/api/checkout", methods=["POST"])
@@ -836,11 +832,12 @@ def api_shopping_cart():
 def api_checkout():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
-    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
-    if not order: 
-        return jsonify({"message": "Order not found"}), 404
-    order.status = 'ordered'
-    db.session.commit()
+    orders = Order.query.filter_by(buyer_id=buyer_id, status='pending').all()
+    if not orders: 
+        return jsonify({"message": "Orders not found"}), 404
+    for order in orders:
+        order.status = 'ordered'
+        db.session.commit()
     return jsonify({"message": "Checkout successful"}), 200
 
 @app.route('/api/add_to_cart', methods=['POST'])
@@ -850,9 +847,13 @@ def api_add_to_cart():
     product_id = data.get("product_id")
     buyer_id = data.get("buyer_id")
     amount = data.get("amount")
-    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
+    buyer = Buyer.query.filter_by(buyer_id=buyer_id).first()
+    product = Product.query.filter_by(product_id=product_id).first()
+    farm = Farm.query.filter_by(farm_name=product.farm_name).first()
+    farmer_id = farm.farmer_id
+    order = Order.query.filter_by(buyer_id=buyer.buyer_id, farmer_id=farmer_id, status='pending').first()
     if not order:
-        order = Order(buyer_id=buyer_id, status='pending')
+        order = Order(buyer_id=buyer.buyer_id, farmer_id=farmer_id, status='pending', preference='N/A')
         db.session.add(order)
         db.session.commit()
     order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
@@ -867,17 +868,64 @@ def api_remove_from_cart():
     buyer_id = data.get("buyer_id")
     order_item_id = data.get("order_item_id")
     amount = data.get("amount")
-    order = Order.query.filter_by(buyer_id=buyer_id, status='pending').first()
+    orderitem = OrderItem.query.filter_by(id=orderitem_id).first()
+    if not orderitem:
+        return jsonify({"message": "Order item not found"}), 404
+    order = Order.query.filter_by(order_id=orderitem.order_id).first()
     if not order:
         return jsonify({"message": "Order not found"}), 404
-    order_item = OrderItem.query.filter_by(order_id=order.order_id, id=order_item_id).first()
-    if not order_item:
-        return jsonify({"message": "Order item not found"}), 404
+    buyer_id = order.buyer_id
     order_item.amount -= amount
     if order_item.amount <= 0:
         db.session.delete(order_item)
     db.session.commit()
     return jsonify({"message": "Product removed from cart"}), 200
+
+@app.route('/api/order_history', methods=['GET'])
+def api_order_history():
+    data = request.get_json()
+    buyer_id = data.get("buyer_id")
+
+    orders = Order.query.filter_by(buyer_id=buyer_id).all()
+    order_details = []
+
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        order_total_price = 0
+        products = []
+
+        for orderitem in orderitems:
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            products.append({
+                'product': {
+                    'product_id': product.product_id,
+                    'title': product.title,
+                    'price': product.price,
+                    'description': product.description,
+                    'farm_name': product.farm_name,
+                },
+                'orderitem': {
+                    'order_item_id': orderitem.id,
+                    'order_id': orderitem.order_id,
+                    'product_id': orderitem.product_id,
+                    'amount': orderitem.amount,
+                }
+            })
+            order_total_price += product.price * orderitem.amount
+
+        order_details.append({
+            'order': {
+                'order_id': order.order_id,
+                'status': order.status,
+                'buyer_id': order.buyer_id,
+                'farmer_id': order.farmer_id,
+                'date': order.order_date.isoformat() if order.order_date else None,
+            },
+            'products': products,
+            'order_total_price': order_total_price,
+        })
+
+    return jsonify(order_details), 200
 
 #CHAT FOR MAIN PAGE
 @app.route('/message/<string:farm_name>')
@@ -1062,7 +1110,7 @@ def login_post():
         return redirect(url_for('login'))
 
     if user and check_password_hash(user.password, password):
-        if user.role == 'admin':
+        if user.role == 'admin' or user.role == 'moderator':
             login_user(user)
             return redirect(url_for('admin'))
         elif user.role == 'farmer':
@@ -1075,9 +1123,6 @@ def login_post():
         elif user.role == 'buyer':
             login_user(user)
             return redirect(url_for('index'))
-        elif user.role == 'moderator':
-            login_user(user)
-            return redirect(url_for('moderator'))
     flash('Invalid credentials!', 'error')
     return redirect(url_for('login'))
 
@@ -1220,7 +1265,6 @@ def api_edit_product():
 @login_required
 def api_delete_product():
     data = request.get_json()
-    farmer_id = data.get("farmer_id")
     product_id = data.get("product_id")
     product = Product.query.get(product_id)
     db.session.delete(product)
@@ -1243,6 +1287,38 @@ def get_user_id(role, role_id):
             if user:
                 return jsonify({"success": True, "user_id": user.user_id})
     return jsonify({"success": False, "message": "User not found"}), 404
+
+@app.route('/api/user_info', methods=['GET'])
+def api_user_info():
+    data = request.get_json()
+    email = data.get("email")
+    user = User.query.filter_by(email=email).first()
+    if user:
+        if user.role == 'buyer':
+            buyer = Buyer.query.filter_by(email=email).first()
+            if buyer:
+                return jsonify({"role": user.role,
+                                "user_id": user.user_id,
+                                "username": buyer.username,
+                                "first_name": buyer.first_name,
+                                "last_name": buyer.last_name,
+                                "phone_number": buyer.phone_number,
+                                "address": buyer.address}), 200
+        if user.role == 'farmer':
+            farmer = Farmer.query.filter_by(email=email).first()
+            farm = Farm.query.filter_by(farmer_id=farmer.farmer_id).first()
+            if farmer and farm:
+                return jsonify({"role": user.role,
+                                "user_id": user.user_id,
+                                "username": farmer.username,
+                                "first_name": farmer.first_name,
+                                "last_name": farmer.last_name,
+                                "phone_number": farmer.phone_number,
+                                "farm_name": farm.farm_name,
+                                "location": farm.location,
+                                "farm_size": farm.farm_size,
+                                "crop_type": farm.crop_type}), 200
+    return jsonify({"message": "User not found"}), 404
     
 #Main
 if __name__ == '__main__':

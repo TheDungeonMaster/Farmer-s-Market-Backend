@@ -257,49 +257,50 @@
                 </div>
             </div>
         </div>
-
-        <!-- Moderator Creation Section -->
-        <div class="card mb-4">
-            <div class="card-header">Create New Moderator Account</div>
-            <div class="card-body">
-                <form id="createModeratorForm">
-                    <div class="form-group">
-                        <label for="moderatorEmail">Email</label>
-                        <input type="email" class="form-control" id="moderatorEmail" placeholder="Enter email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="moderatorUsername">Username</label>
-                        <input type="text" class="form-control" id="moderatorUsername" placeholder="Enter username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="moderatorPassword">Password</label>
-                        <input type="password" class="form-control" id="moderatorPassword" placeholder="Enter password" required>
-                    </div>
-                    <button type="button" class="btn btn-primary" onclick="createModerator()">Create Moderator</button>
-                </form>
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header">List of Moderators</div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Email</th>
-                                <th>Username</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="moderatorsList">
-                            <!-- Rows will be dynamically populated here -->
-                        </tbody>
-                    </table>
+        {% if role == 'admin' %}
+            <!-- Moderator Creation Section -->
+            <div class="card mb-4">
+                <div class="card-header">Create New Moderator Account</div>
+                <div class="card-body">
+                    <form id="createModeratorForm">
+                        <div class="form-group">
+                            <label for="moderatorEmail">Email</label>
+                            <input type="email" class="form-control" id="moderatorEmail" placeholder="Enter email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="moderatorUsername">Username</label>
+                            <input type="text" class="form-control" id="moderatorUsername" placeholder="Enter username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="moderatorPassword">Password</label>
+                            <input type="password" class="form-control" id="moderatorPassword" placeholder="Enter password" required>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="createModerator()">Create Moderator</button>
+                    </form>
                 </div>
             </div>
-        </div>
+
+            <div class="card mb-4">
+                <div class="card-header">List of Moderators</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Username</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="moderatorsList">
+                                <!-- Rows will be dynamically populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
 
