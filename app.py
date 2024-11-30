@@ -153,32 +153,47 @@ def index():
 @app.route('/products')
 def products():
     products = Product.query.all()
-    role = current_user.role
+    if current_user.is_authenticated:
+        role = current_user.role
+    else:
+        role = None
     return render_template('products.html', products = products, role = role)
 
 @app.route('/products/vegetables')
 def vegetables():
     vegetables = Product.query.filter_by(category='Vegetables').all()
-    role = current_user.role
+    if current_user.is_authenticated:
+        role = current_user.role
+    else:
+        role = None
     return render_template('products.html', products = vegetables, role = role)
 
 @app.route('/products/fruits')
 def fruits():
     fruits = Product.query.filter_by(category='fruits').all()
-    role = current_user.role
+    if current_user.is_authenticated:
+        role = current_user.role
+    else:
+        role = None
     return render_template('products.html', products = fruits, role = role)
 
 @app.route('/products/seeds')
 def seeds():
     seeds = Product.query.filter_by(category='seeds').all()
-    role = current_user.role
+    if current_user.is_authenticated:
+        role = current_user.role
+    else:
+        role = None
     return render_template('products.html', products = seeds, role = role)
 
 @app.route('/search')
 def search_products():
     query = request.args.get('query')
     products = Product.query.filter(or_(Product.title.contains(query), Product.description.contains(query), Product.farm_name.contains(query), Product.category.contains(query))).all()
-    role = current_user.role
+    if current_user.is_authenticated:
+        role = current_user.role
+    else:
+        role = None
     return render_template('products.html', products = products, role = role) 
 
 #ADMINS
