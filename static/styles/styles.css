@@ -46,7 +46,6 @@ body {
 .navbar-container {
     display:flex;
     align-items: center;
-    padding-bottom: 0.75rem;
 }
 
 /*PRODUCT LISTING*/
@@ -196,5 +195,45 @@ body {
         display: flex;
         flex-direction: column;
         gap: 1rem;
+    }
+    .navbar a {
+        font-size: 1rem;
+        padding: 0 0.25rem
+    }
+    .account-display {
+        display: grid;
+        justify-content: center;
+    }
+    .mr-sm-2 {
+        padding: 8px;
+        border: none;
+        margin-right: 12px;
+        font-size: 12px;
+    }
+    .nav-link {
+        display: flex;
+        flex-wrap: wrap;
+        padding-right: 0.15rem;
+    }
+    .back {
+        display: none;
+    }
+    .my-2 {
+        display: flex;
+    }
+    .btn {
+        margin: 0;
+    }
+    .product-table {
+        display:block;
+        width:100%;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+    }
+    .username {
+        padding: 0 1rem;
+    }
+    .account-display a {
+        margin-right: 0;
     }
 }

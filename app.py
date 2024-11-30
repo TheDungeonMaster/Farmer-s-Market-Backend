@@ -15,15 +15,18 @@ import pyotp
 import os
 from datetime import datetime
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_jwt_extended import JWTManager, create_access_token
 
 #App
 app = Flask(__name__)
 app.secret_key = 'super secret key'
+app.config['JWT_SECRET_KEY'] = 'api_token_secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://admin:labkafarmer01@farmer-market.cheqy8c0cs83.eu-west-2.rds.amazonaws.com/farmermarketdb'
 engine = create_engine("mysql://admin:labkafarmer01@farmer-market.cheqy8c0cs83.eu-west-2.rds.amazonaws.com/farmermarketdb")
 Session = sessionmaker(bind=engine)
 login_manager = LoginManager(app)
 mail = Mail(app)
+jwt = JWTManager(app)
 socketio = SocketIO(app)
 
 #Database connections
@@ -55,6 +58,7 @@ class User(db.Model, UserMixin):
     two_factor_secret = db.Column(db.String(16))
     status = db.Column(db.String(20), default='active')
     username = db.Column(db.String(20))
+    auth_token = db.Column(db.String(50), unique=True)
     def get_id(self):
            return (self.user_id)
 
@@ -809,6 +813,7 @@ def api_shopping_cart():
     if not orders:
         return jsonify([]), 200
     order_list = []
+    total_amount = 0
     for order in orders:
         orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
         orderitem_list = []
@@ -816,6 +821,7 @@ def api_shopping_cart():
             product = Product.query.filter_by(product_id=orderitem.product_id).first()
             total_price = product.price * orderitem.amount
             grand_total += total_price
+            total_amount += orderitem.amount
             orderitem_list.append({
                 "orderitem_id": orderitem.id,
                 "order_id": order.order_id,
@@ -825,6 +831,7 @@ def api_shopping_cart():
                 "amount": orderitem.amount
             })
         order_list.append(orderitem_list)
+        order_list.append({"grand_total": grand_total, "total_amount": total_amount})
     return jsonify(order_list), 200
 
 @app.route("/api/checkout", methods=["POST"])
@@ -1195,11 +1202,19 @@ def api_login():
     
     if user and check_password_hash(user.password, password):
         login_user(user)
-        response = {"message": f"{user.role.capitalize()} logged in successfully", "role": user.role}
+        access_token = os.urandom(16).hex()
+        user.auth_token = access_token
+        db.session.commit()
+        response = {"message": f"{user.role.capitalize()} logged in successfully", "role": user.role, "token": access_token}
 
         return jsonify(response), 200
     else:
         return jsonify({"message": "Invalid credentials"}), 401
+    
+@app.route('/api/logout', methods=['POST'])
+def api_logout():
+    logout_user()
+    return jsonify({"message": "Logged out successfully"}), 200
     
 @app.route('/api/products', methods=['GET'])
 def api_products():
@@ -1288,7 +1303,7 @@ def get_user_id(role, role_id):
                 return jsonify({"success": True, "user_id": user.user_id})
     return jsonify({"success": False, "message": "User not found"}), 404
 
-@app.route('/api/user_info', methods=['GET'])
+@app.route('/api/user_info', methods=['GET', 'POST'])
 def api_user_info():
     data = request.get_json()
     email = data.get("email")
@@ -1299,6 +1314,8 @@ def api_user_info():
             if buyer:
                 return jsonify({"role": user.role,
                                 "user_id": user.user_id,
+                                "auth_token": user.auth_token,
+                                "buyer_id": buyer.buyer_id,
                                 "username": buyer.username,
                                 "first_name": buyer.first_name,
                                 "last_name": buyer.last_name,
@@ -1310,6 +1327,8 @@ def api_user_info():
             if farmer and farm:
                 return jsonify({"role": user.role,
                                 "user_id": user.user_id,
+                                "auth_token": user.auth_token,
+                                "farmer_id": farmer.farmer_id,
                                 "username": farmer.username,
                                 "first_name": farmer.first_name,
                                 "last_name": farmer.last_name,

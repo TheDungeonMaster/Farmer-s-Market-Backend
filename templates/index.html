@@ -46,6 +46,10 @@
             flex-wrap: wrap;
             gap:2rem;
         }
+        .category-button-container {
+            display: flex;
+            justify-content: center;
+        }
         .category-button-container a {
             display: flex;
             padding: 1.5rem;
@@ -92,6 +96,9 @@
             {% if role == 'admin' %}
                 <a href="/admin" class="nav-link">Admin dashboard</a>
             {% endif %}
+            {% if role == 'farmer' %}
+                <a href="/farmer/farmer_dashboard/{{ farmer_id }}" class="dashboard-button nav-link">Go to Dashboard</a>
+            {% endif %}
             {% if role == 'buyer' %}
                 <a href="/shopping_cart/{{buyer_id}}" class="nav-link cart-button">
                     <img src="https://www.svgrepo.com/show/80543/shopping-cart-outline.svg" alt="Shopping cart" width="30" height="30" />
@@ -100,9 +107,6 @@
             <a href="/chats" class="nav-link chat-button" style="display: none;">
                 <img src="https://www.svgrepo.com/show/529481/chat-round-dots.svg" alt="Chat" width="30" height="30" />
             </a>
-            {% if role == 'farmer' %}
-                <a href="/farmer/farmer_dashboard/{{ farmer_id }}" class="dashboard-button nav-link">Go to Dashboard</a>
-            {% endif %}
             <a class="nav-link login-button" href="/login">Login</a>
             <a class="nav-link logout-button" href="/logout" style="display: none;">
                 <img src="https://www.svgrepo.com/show/524091/logout-2.svg" alt="Logout" width="30" height="30" />
@@ -140,7 +144,7 @@
         </div>
     </div>
     <nav class="navbar">
-        <a class="navbar-brand" href="/products">Latest Products</a>
+        <a class="navbar-brand" href="/products">Products</a>
         <div class="navbar-container">
             <form class="form-inline my-2 my-lg-0" action="/search" method="get">
                 <input class="form-control mr-sm-2" type="search" name="query" placeholder="Search for products" aria-label="Search">
