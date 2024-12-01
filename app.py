@@ -991,6 +991,22 @@ def checkout():
         db.session.commit()
     return redirect(url_for('index'))
 
+@app.route('/order-logs')
+@login_required
+def order_logs():
+    orders = Order.query.all()
+    order_details = []
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        order_total_price = 0
+        products = []
+        for orderitem in orderitems:
+            products.append({'product':Product.query.filter_by(product_id=orderitem.product_id).first(), 'orderitem':orderitem})
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            order_total_price += product.price * orderitem.amount
+        order_details.append({'order':order, 'products':products, 'orderitems':orderitems, 'order_total_price':order_total_price})
+    return render_template('order_logs.html', orders=orders, order_details=order_details)
+
 @app.route('/order-history/<int:buyer_id>')
 @login_required
 def order_history(buyer_id):

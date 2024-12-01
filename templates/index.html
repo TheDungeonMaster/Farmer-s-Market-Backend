@@ -142,6 +142,9 @@
         {% if role == 'buyer' %}
             <a href="/order-history/{{ buyer_id }}">View order history</a>
         {% endif %}
+        {% if role == 'admin' or role == 'moderator' %}
+            <a href="/order-logs">View order logs</a>
+        {% endif %}
     </div>
     <div class="home-body">
         <div class="welcome-section">
