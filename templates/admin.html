@@ -466,8 +466,9 @@
                                         ...
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="/message/<int:farmer_id>" onclick="writeToFarmer(${approved_farmer.farmer_id})">Write to Farmer</a>
+                                        <a class="dropdown-item" href="/message/farmer/${approved_farmer.farmer_id}" onclick="writeToFarmer(${approved_farmer.farmer_id})">Write to Farmer</a>
                                         <a class="dropdown-item" href="/farmer/${approved_farmer.farmer_id}/info">View Info about Farmer</a>
+                                        <a class="dropdown-item text-danger" href="#" onclick="deleteFarmer(${approved_farmer.farmer_id})">Delete Farmer</a>
                                         <a class="dropdown-item text-danger" href="#" onclick="banFarmer(${approved_farmer.farmer_id})">Ban Farmer</a>
                                     </div>
                                 </div>
@@ -569,6 +570,7 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="#" onclick="writeToBuyer(${buyer.buyer_id})">Contact Buyer</a>
+                                        <a class="dropdown-item text-danger" href="#" onclick="deleteBuyer(${buyer.buyer_id})">Delete Buyer</a>
                                         <a class="dropdown-item text-danger" href="#" onclick="banBuyer(${buyer.buyer_id})">Ban Buyer</a>
                                     </div>
                                 </div>
@@ -934,6 +936,25 @@
                     },
                     error: function(error) {
                         console.error("Error deleting farmer:", error);
+                    }
+                });
+            }
+        }
+
+        function deleteBuyer(buyer_id) {
+            if (confirm("Are you sure you want to delete this buyer?")) {
+                $.ajax({
+                    url: '/delete-buyer/' + buyer_id,
+                    method: 'DELETE',
+                    success: function() {
+                        alert('Buyer ' + buyer_id + ' has been deleted.');
+                        renderBuyersList();
+                        renderFarmersList();
+                        renderModerators();
+                        renderRejectedList();
+                    },
+                    error: function(error) {
+                        console.error("Error deleting buyer:", error);
                     }
                 });
             }

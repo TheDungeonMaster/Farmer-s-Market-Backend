@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products</title>
     <style>
+        .farm-name {
+            font-size: 18px;
+            margin-bottom: 2rem !important;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
@@ -31,10 +35,10 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">{{ product.title }}</h5>
+                            <p class="card-text farm-name">Farm: {{ product.farm_name }}</p>
                             <p class="card-text">{{ product.description }}</p>
-                            <p class="card-text">{{ product.farm_name }}</p>
                             <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
-                            {% if role == 'buyer' %}
+                            {% if role == 'buyer' or role == 'admin' or role == 'moderator' %}
                                 <form method = "POST" action="/add_to_cart/{{ product.product_id }}">
                                     <div class="form-group">
                                         <label for="amount_{{ product.id }}">Amount:</label>
@@ -43,7 +47,7 @@
                                     <button type="submit" class="btn btn-primary mt-2">Add to Cart</button>
                                 </form>
                                 <div class="product-buttons">
-                                    <a class="btn write-button" href="/message/{{ product.farm_name }}">Write to Seller</a>
+                                    <a class="btn write-button" href="/message/farm/{{ product.farm_name }}">Write to Seller</a>
                                     <a class="btn write-button" href="/farmer/{{ product.farm_name }}/info">View Seller Information</a>
                                 </div>
                             {% endif %}

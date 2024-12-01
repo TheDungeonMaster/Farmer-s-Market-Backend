@@ -32,6 +32,10 @@
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
+        .farm-name {
+            font-size: 18px;
+            margin-bottom: 2rem !important;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
@@ -64,10 +68,10 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">{{ product.title }}</h5>
+                            <p class="card-text farm-info">Farm: {{ product.farm_name }}</p>
                             <p class="card-text">{{ product.description }}</p>
-                            <p class="card-text">{{ product.farm_name }}</p>
                             <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
-                            {% if role == 'buyer' or role == 'admin' %}
+                            {% if role == 'buyer' or role == 'admin' or role == 'moderator' %}
                                 <form method = "POST" action="/add_to_cart/{{ product.product_id }}">
                                     <div class="form-group">
                                         <label for="amount_{{ product.id }}">Amount:</label>
@@ -77,6 +81,9 @@
                                 </form>
                                 <div class="product-buttons">
                                     <a class="btn write-button" href="/message/{{ product.farm_name }}">Write to Seller</a>
+                                    {% if role == 'admin' or role == 'moderator' %}
+                                        <a class="btn write-button" href="/delete_product/{{ product.product_id }}">Delete product</a>
+                                    {% endif %}
                                 </div>
                             {% endif %}
                         </div>
