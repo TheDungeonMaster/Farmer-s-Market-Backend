@@ -50,6 +50,14 @@
             background-color: var(--primary-color);
             color: var(--white);
             margin-left: auto;
+            display: grid;
+        }
+        .chat-messages small {
+            display: flex;
+            color: var(--background-color);
+            font-size: 12px;
+            padding-top: 0.5rem;
+            justify-content: flex-end;
         }
         .message.other {
             background-color: #e0e0e0;
@@ -77,6 +85,30 @@
         .send-button:hover {
             background-color: var(--secondary-color);
         }
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 0.5rem;
+        }
+        .message-buttons {
+            display: none;
+            justify-content: space-evenly;
+        }
+        .message:hover .message-buttons {
+            display: flex;
+        }
+        .message-buttons button {
+            background-color: var(--background-light);
+            border: 0;
+            width:40%;
+            font-size:12px;
+        }
+        .message-buttons button:hover {
+            background-color: var(--secondary-color);
+            color: var(--background-light);
+            border: 0;
+            width:40%;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
@@ -96,41 +128,33 @@
             </div>
             <div class="chat-messages">
                 {% for message in messages %}
-                <div class="message {{ 'user' if message.user_id == current_user.user_id else 'other' }}">
+                <div class="message {{ 'user' if message.user_id == current_user.user_id else 'other' }}" data-id="{{ message.message_id }}">
                     {{ message.text }}
+                    <div class="message-info">
+                        {% if message.edited == true %}
+                        <small>edited</small>
+                        {% endif %}
+                        <small>{{ message.m_time }}</small>
+                    </div>
+                    {% if message.user_id == current_user.user_id %}
+                    <div class="message-buttons">
+                        <button class="edit-button" onclick="edit_message({{ message.message_id }})">Edit</button>
+                        <button class="delete-button" onclick="delete_message({{ message.message_id }})">Delete</button>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
-            <form class="chat-input-container" action="/send-message/{{ chatroom_id }}" method="POST">
-                <input class="chat-input" type="text" name="content" placeholder="Type your message here..." required>
+            <form class="chat-input-container" onsubmit="event.preventDefault(); send_message({{ chatroom_id }});">
+                <input class="chat-input" type="text" name="content" id="content-input" placeholder="Type your message here..." required>
                 <button class="send-button" type="submit">Send</button>
             </form>
         </div>
     </div>
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script>
-        const socket = io();
-
-        // Join the chatroom
-        const chatroomId = "{{ chatroom_id }}";
-        const userId = "{{ current_user.user_id }}"; // Pass this from the backend
-        socket.emit('join', { chatroom_id: chatroomId });
-
-        // Listen for new messages
-        socket.on('message', function(data) {
-            const chatMessages = document.querySelector('.chat-messages');
-            const newMessage = document.createElement('div');
-            newMessage.classList.add('message');
-            newMessage.textContent = data.text;
-            if (data.user_id === userId) {
-                newMessage.classList.add('user');
-            } else {
-                newMessage.classList.add('other');
-            }
-            chatMessages.appendChild(newMessage);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        });
-
         // Send a message
         const form = document.querySelector('.chat-input-container');
         form.addEventListener('submit', function(event) {
@@ -140,6 +164,42 @@
             socket.emit('send_message', { chatroom_id: chatroomId, text: messageText, user_id: userId });
             input.value = ''; // Clear the input
         });
+        function edit_message(message_id) {
+            const newText = prompt('Edit your message:');
+            $.ajax({
+                url: '/edit_message/' + message_id + '/' + newText,
+                method: 'POST',
+                success: function() {
+                    location.reload();
+                }
+            });
+        }
+        function delete_message(message_id) {
+            if (confirm("Are you sure you want to delete this message?") == true) {
+                $.ajax({
+                    url: '/delete_message/' + message_id,
+                    method: 'POST',
+                    success: function() {
+                        location.reload();
+                    }
+                });
+            }
+        }
+        function send_message(chatroom_id) {
+            const content = document.getElementById('content-input').value;
+        
+            $.ajax({
+                url: '/send-message/' + chatroom_id,
+                method: 'POST',
+                data: { content: content },
+                success: function() {
+                    location.reload();
+                },
+                error: function(error) {
+                    console.error('Error sending message:', error);
+                }
+            });
+        }
     </script>
 </body>
 </html>

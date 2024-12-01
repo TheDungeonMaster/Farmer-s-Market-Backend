@@ -163,6 +163,54 @@
             </div>
         </div>
 
+        <!-- Rejected Farmers Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                Rejected Farmer Applications
+                <div class="card-body">
+                    <input type="text" id="rejectedSearch" placeholder="Search..." class="form-control form-control-sm mt-2" oninput="renderRejectedList()">
+                    <div class="row-options">
+                        <select id="rejectedListRowCount" class="form-control form-control-sm mr-2" onchange="renderRejectedList()">
+                            <option value="0">Hide</option>
+                            <option value="5">5 rows</option>
+                            <option value="10" selected>10 rows</option>
+                            <option value="25">25 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Username</th>
+                                <th>Phone Number</th>
+                                <th>Email</th>
+                                <th>Farm Name</th>
+                                <th>Crop Type</th>
+                                <th>Farm Size</th>
+                                <th>Location</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rejectedList">
+                            <!-- Rows with pending farmers' data will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                    <div id="rejectedPagination" class="pagination">
+                        <button onclick="changePage('rejected', -1)" class="btn btn-primary btn-sm mr-2" id="rejectedPrev">Previous</button>
+                        <button onclick="changePage('rejected', 1)" class="btn btn-primary btn-sm" id="rejectedNext">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Buyers Section -->
         <div class="card mb-4">
             <div class="card-header">
@@ -313,10 +361,12 @@
         let farmersPage = 0;
         let buyersPage = 0;
         let bannedPage = 0;
+        let rejectedPage = 0;
         let rowsPerPage = {
             pendingFarmers: 10,
             farmers: 10,
-            buyers: 10
+            buyers: 10,
+            rejected: 10
         };
 
         function getRowCount(section) {
@@ -428,6 +478,54 @@
                     document.getElementById("farmersPagination").style.display = (data.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
                     document.getElementById("farmersPrev").disabled = farmersPage === 0;
                     document.getElementById("farmersNext").disabled = end >= data.length;
+                }
+            });
+        }
+
+        function renderRejectedList() {
+            const rowCount = getRowCount("rejectedList");
+            rowsPerPage.rejectedList = rowCount;
+
+            $.ajax({
+                url: '/rejected-farmers',
+                method: 'GET',
+                success: function(data) {
+                    const searchQuery = document.getElementById("rejectedSearch").value.toLowerCase();
+                    const filteredData = data.filter(rejected_farmer =>
+                        rejected_farmer.first_name.toLowerCase().includes(searchQuery) ||
+                        rejected_farmer.last_name.toLowerCase().includes(searchQuery) ||
+                        rejected_farmer.username.toLowerCase().includes(searchQuery) ||
+                        rejected_farmer.phone_number.includes(searchQuery) ||
+                        rejected_farmer.email.toLowerCase().includes(searchQuery)
+                    );
+                    
+                    const rejectedTable = document.getElementById("rejectedList");
+                    rejectedTable.innerHTML = "";
+                    const start = rejectedPage * rowCount;
+                    const end = start + rowCount;
+                    const paginatedData = filteredData.slice(start, end);
+                    paginatedData.forEach(rejected_farmer => {
+                        const row = `<tr>
+                            <td>${rejected_farmer.farmer_id}</td>
+                            <td>${rejected_farmer.first_name}</td>
+                            <td>${rejected_farmer.last_name}</td>
+                            <td>${rejected_farmer.username}</td>
+                            <td>${rejected_farmer.phone_number}</td>
+                            <td>${rejected_farmer.email}</td>
+                            <td>${rejected_farmer.farm_name}</td>
+                            <td>${rejected_farmer.crop_type}</td>
+                            <td>${rejected_farmer.farm_size}</td>
+                            <td>${rejected_farmer.location}</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="approveFarmer(${rejected_farmer.farmer_id})">Approve</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteFarmer(${rejected_farmer.farmer_id})">Delete</button>
+                            </td>
+                        </tr>`;
+                        rejectedTable.innerHTML += row;
+                    });
+                    document.getElementById("rejectedPagination").style.display = (data.length > rowCount) && (rowCount != 0) ? 'block' : 'none';
+                    document.getElementById("rejectedPrev").disabled = rejectedPage === 0;
+                    document.getElementById("rejectedNext").disabled = end >= data.length;
                 }
             });
         }
@@ -659,6 +757,7 @@
                     alert('Farmer ' + farmer_id + ' approved');
                     renderPendingFarmers();
                     renderFarmersList();
+                    renderRejectedList();
                 }
             });
         }
@@ -670,6 +769,7 @@
                 success: function() {
                     alert('Farmer ' + farmer_id + ' rejected');
                     renderPendingFarmers();
+                    renderRejectedList();
                 }
             });
         }
@@ -820,6 +920,25 @@
             }
         }
 
+        function deleteFarmer(farmer_id) {
+            if (confirm("Are you sure you want to delete this farmer?")) {
+                $.ajax({
+                    url: '/delete-farmer/' + farmer_id,
+                    method: 'DELETE',
+                    success: function() {
+                        alert('Farmer ' + farmer_id + ' has been deleted.');
+                        renderBuyersList();
+                        renderFarmersList();
+                        renderModerators();
+                        renderRejectedList();
+                    },
+                    error: function(error) {
+                        console.error("Error deleting farmer:", error);
+                    }
+                });
+            }
+        }
+
         function writeToFarmer(farmerId) {
             fetch(`/api/get-user-id/farmer/${farmerId}`)
                 .then((response) => response.json())
@@ -852,6 +971,7 @@
         renderBuyersList();
         renderBannedList();
         renderModerators();
+        renderRejectedList();
     </script>
 </body>
 </html>

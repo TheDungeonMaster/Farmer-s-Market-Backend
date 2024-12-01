@@ -58,7 +58,21 @@
         .chat-card a:hover {
             background-color: var(--secondary-color);
         }
-
+        .notification-count {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background-color: red;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
@@ -78,9 +92,60 @@
             <div>
                 <h5>Chat with {{ chatroom.other_user_name }}</h5>
             </div>
-            <a href="/chatroom/{{ chatroom.chatroom_id }}">View Chat</a>
+            <a href="/chatroom/{{ chatroom.chatroom_id }}" data-user-id = {{user_id}}  data-chatroom-id = {{chatroom.chatroom_id}} >
+                View Chat
+            </a>
+            <span class="notification-count" style="display: flex;">0</span>
         </div>
         {% endfor %}
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Select all chat cards
+            const chatCards = document.querySelectorAll('.chat-card');
+        
+            // Iterate over each chat card
+            chatCards.forEach(chatCard => {
+                const userId = chatCard.querySelector('a').getAttribute('data-user-id');
+                console.log(userId);
+                const chatroomId = chatCard.querySelector('a').getAttribute('data-chatroom-id');
+                console.log(chatroomId);
+                const notificationSpan = chatCard.querySelector('.notification-count');
+        
+                if (userId && chatroomId) {
+                    // Construct the URL with the actual user_id and chatroom_id
+                    const apiUrl = `/api/notifications/unseen-count?data=${encodeURIComponent(JSON.stringify({
+                        "user_id": userId,
+                        "chatroom_id": chatroomId
+                    }))}`;
+
+                    console.log(`API URL: ${apiUrl}`);
+        
+                    fetch(apiUrl)
+                        .then(response => {
+                            console.log(`Response status: ${response.status}`);
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log(`API Response:`, data);
+                            const notificationCount = data.unseen_count;
+        
+                            if (notificationCount > 0) {
+                                notificationSpan.textContent = notificationCount;
+                                notificationSpan.style.display = 'flex';
+                            } else {
+                                notificationSpan.style.display = 'flex';
+                            }
+                        })
+                        .catch(error => console.error('Error fetching notifications:', error));
+                } else {
+                    console.error('user_id or chatroom_id is missing for a chat card');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
