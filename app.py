@@ -14,7 +14,6 @@ import mysql.connector
 import pyotp
 import os
 from datetime import datetime
-from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_jwt_extended import JWTManager, create_access_token
 
 #App
@@ -27,7 +26,6 @@ Session = sessionmaker(bind=engine)
 login_manager = LoginManager(app)
 mail = Mail(app)
 jwt = JWTManager(app)
-socketio = SocketIO(app)
 
 #Database connections
 
@@ -109,6 +107,8 @@ class Messages(db.Model):
     text = db.Column(db.String(500))
     user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))
     m_time = db.Column(db.DateTime, default=datetime.utcnow)
+    edited = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default='unseen')
     
 class Order(db.Model):
     __tablename__ = 'order'
@@ -126,6 +126,15 @@ class OrderItem(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.product_id'))
     amount = db.Column(db.Integer)
     
+class Notifications(db.Model):
+    __tablename__ = 'notifications'
+    n_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))
+    text = db.Column(db.String(200))
+    title = db.Column(db.String(50))
+    n_time = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='unseen')
+    
 #USER LOADER
 @login_manager.user_loader
 def load_user(user_id):
@@ -138,8 +147,10 @@ def index():
     role = current_user.role if current_user.is_authenticated else None
     farmer_id = None
     buyer_id = None
+    status = None
     if role == 'farmer':
         farmer = Farmer.query.filter_by(email=current_user.email).first()
+        status = farmer.status
         if farmer:
             farmer_id = farmer.farmer_id
     elif role == 'buyer':
@@ -148,7 +159,26 @@ def index():
             buyer_id = buyer.buyer_id
     username = current_user.username if current_user.is_authenticated else None
     user = current_user if current_user.is_authenticated else None
-    return render_template('index.html', products=products, user=user, username=username, role=role, farmer_id=farmer_id, buyer_id=buyer_id)
+    return render_template('index.html', products=products, user=user, username=username, role=role, farmer_id=farmer_id, buyer_id=buyer_id, status=status)
+
+@app.route('/notifications')
+def notifications():
+    notifications = Notifications.query.filter_by(user_id=current_user.user_id).all()
+    for notification in notifications:
+        notification.status = 'seen'
+        db.session.commit()
+    return render_template('notifications.html', notifications=notifications)
+
+@app.route('/send-notification/<int:user_id>', methods=['POST'])
+def send_notification():
+    data = request.get_json()
+    title = data.get('title')
+    text = data.get('text')
+    user = User.query.get(user_id)
+    notification = Notifications(user_id=user.user_id, title=title, text=text)
+    db.session.add(notification)
+    db.session.commit()
+    return jsonify({'message': 'Notification sent successfully'}), 200
 
 @app.route('/products')
 def products():
@@ -230,6 +260,18 @@ def delete_user(user_id):
     db.session.commit()
     return jsonify({"message": "User deleted"}), 200
 
+@app.route('/delete-farmer/<int:farmer_id>', methods=['DELETE'])
+@login_required
+def delete_farmer(farmer_id):
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    farmer = Farmer.query.get(farmer_id)
+    user = User.query.filter_by(email=farmer.email).first()
+    db.session.delete(user)
+    db.session.delete(farmer)
+    db.session.commit()
+    return jsonify({"message": "Farmer deleted"}), 200
+
 @app.route('/pending-farmers', methods=['GET'])
 @login_required
 def pending_farmers():
@@ -279,6 +321,29 @@ def approved_farmers():
         })
     return jsonify(approved_farmers_list)
 
+@app.route('/rejected-farmers', methods=['GET'])
+@login_required
+def rejected_farmers():
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    rejected_farmers = Farmer.query.filter_by(status='rejected').all()
+    rejected_farmers_list = []
+    for rejected_farmer in rejected_farmers:
+        farm = Farm.query.filter_by(farmer_id=rejected_farmer.farmer_id).first()
+        rejected_farmers_list.append({
+            "farmer_id": rejected_farmer.farmer_id,
+            "first_name": rejected_farmer.first_name,
+            "last_name": rejected_farmer.last_name,
+            "username": rejected_farmer.username,
+            "phone_number": rejected_farmer.phone_number,
+            "email": rejected_farmer.email,
+            'farm_name': farm.farm_name,
+            'crop_type': farm.crop_type,
+            'farm_size': farm.farm_size,
+            'location': farm.location,
+        })
+    return jsonify(rejected_farmers_list)
+
 @app.route('/banned-users', methods=['GET'])
 @login_required
 def banned_users():
@@ -321,7 +386,7 @@ def banned_farmers():
     
     banned_users_list = []
     for banned_user in banned_users:
-        banned_farmer = Farmer.query.filter(_or(Farmer.status == 'banned', Farmer.status == 'rejected'), email=banned_user.email).first()
+        banned_farmer = Farmer.query.filter(_or(Farmer.status == 'banned'), email=banned_user.email).first()
         banned_users_list.append({
             "user_id": banned_user.user_id,
             'role': 'farmer',
@@ -363,7 +428,12 @@ def approve_farmer(farmer_id):
     if farmer:
         farmer.status = "approved"
         db.session.commit()
-
+        user = User.query.filter_by(email=farmer.email).first()
+        notification_title = "You application has been approved"
+        notification_text = "Your application has been approved by the admin. You now have access to the dashboard where you can add new products and fullfill orders."
+        notification = Notifications(user_id=user.user_id, title=notification_title, text=notification_text)
+        db.session.add(notification)
+        db.session.commit()
         return jsonify({"message": "Farmer approved"}), 200
     return jsonify({"message": "Farmer not found"}), 404
 
@@ -378,7 +448,14 @@ def reject_farmer(farmer_id):
         user = User.query.filter_by(email=farmer.email).first()
         user.status = 'banned'
         db.session.commit()
+        user = User.query.filter_by(email=farmer.email).first()
+        notification_title = "You application has been rejected"
+        notification_text = "Your application has been rejected by the admin. Please contact the admin by email on admin@mail.com for more information."
+        notification = Notifications(user_id=user.user_id, title=notification_title, text=notification_text)
+        db.session.add(notification)
+        db.session.commit()
         return jsonify({"message": "Farmer rejected"}), 200
+    
     return jsonify({"message": "Farmer not found"}), 404
 
 @app.route('/ban-farmer/<int:farmer_id>', methods=['POST'])
@@ -559,6 +636,14 @@ def fulfill_order(farmer_id, order_id):
         product.quantity -= order_item.amount
         db.session.commit()
     order.status = 'fulfilled'
+    db.session.commit()
+    buyer = Buyer.query.filter_by(buyer_id=order.buyer_id).first()
+    user = User.query.filter_by(email=buyer.email).first()
+    farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    notification_text = f"Your order {order.order_id} has been fulfilled by {farm.farm_name}."
+    notification_title = "Order Fulfilled"
+    notification = Notifications(user_id=user.user_id, text=notification_text, title=notification_title)
+    db.session.add(notification)
     db.session.commit()
     return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
 
@@ -800,6 +885,13 @@ def checkout():
     for order in orders:
         order.status = 'ordered'
         db.session.commit()
+        farmer = Farmer.query.filter_by(farmer_id=order.farmer_id).first()
+        other_user = User.query.filter_by(email=farmer.email).first()
+        notification_title = "New Order"
+        notification_text = "You have a new order from " + buyer.first_name + " " + buyer.last_name + ". Check you dashboard for more details."
+        notification = Notifications(user_id=other_user.user_id, title=notification_title, text=notification_text)
+        db.session.add(notification)
+        db.session.commit()
     return redirect(url_for('index'))
 
 @app.route('/order-history/<int:buyer_id>')
@@ -818,8 +910,13 @@ def order_history(buyer_id):
         order_details.append({'order':order, 'products':products, 'orderitems':orderitems, 'order_total_price':order_total_price})
     return render_template('order_history.html', orders=orders, order_details=order_details)
 
-@app.route("/api/shopping_cart", methods=["GET"])
-@login_required
+@app.route("/api/notifications/unseen-count", methods=["GET"])
+def api_notifications_unseen_count():
+    user_id = request.args.get('user_id')
+    notifications = Notifications.query.filter_by(user_id=user_id, status='unseen').all()
+    return jsonify(len(notifications)), 200
+
+@app.route("/api/shopping_cart", methods=["POST"])
 def api_shopping_cart():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
@@ -850,7 +947,6 @@ def api_shopping_cart():
     return jsonify(order_list), 200
 
 @app.route("/api/checkout", methods=["POST"])
-@login_required
 def api_checkout():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
@@ -863,7 +959,6 @@ def api_checkout():
     return jsonify({"message": "Checkout successful"}), 200
 
 @app.route('/api/add_to_cart', methods=['POST'])
-@login_required
 def api_add_to_cart():
     data = request.get_json()
     product_id = data.get("product_id")
@@ -884,7 +979,6 @@ def api_add_to_cart():
     return jsonify({"message": "Product added to cart"}), 200
 
 @app.route('/api/remove_from_cart', methods=['DELETE'])
-@login_required
 def api_remove_from_cart():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
@@ -1028,7 +1122,32 @@ def chats():
             "other_user_name": other_user.username,
             "farm_name": farm.farm_name if farm else "N/A"
         })
-    return render_template('chats.html', chatrooms=chat_details)
+    return render_template('chats.html', chatrooms=chat_details, user_id=user_id)
+
+@app.route('/api/messages/unseen-count', methods=['POST', 'GET'])
+def api_messages_unseen_count():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    chatroom_id = data.get('chatroom_id')
+    chatroom = Chatroom.query.filter_by(chatroom_id=chatroom_id).first()
+    messages = Messages.query.filter_by(chatroom_id=chatroom_id).all()
+    unseen_messages = [message for message in messages if message.user_id != user_id and message.status == 'unseen']
+    return jsonify({"unseen_count": len(unseen_messages)}), 200
+
+@app.route('/edit_message/<int:message_id>/<string:text>', methods=['POST'])
+def edit_message(message_id, text):
+    message = Messages.query.get(message_id)
+    message.text = text
+    message.edited = True
+    db.session.commit()
+    return redirect(url_for('chatroom', chatroom_id=message.chatroom_id))
+
+@app.route('/delete_message/<int:message_id>', methods=['POST'])
+def delete_message(message_id):
+    message = Messages.query.get(message_id)
+    db.session.delete(message)
+    db.session.commit()
+    return redirect(url_for('chatroom', chatroom_id=message.chatroom_id))
 
 @app.route('/api/message', methods=['GET'])
 def api_message():
@@ -1087,26 +1206,6 @@ def api_get_chatrooms():
             "other_user_name": other_user.username,
         })
     return jsonify({"chatrooms": chatroom_list}), 200
-
-@socketio.on('join')
-def on_join(data):
-    chatroom_id = data['chatroom_id']
-    join_room(chatroom_id)
-    
-@socketio.on('leave')
-def on_leave(data):
-    chatroom_id = data['chatroom_id']
-    leave_room(chatroom_id)
-    
-@socketio.on('send_message')
-def handle_send_message(data):
-    chatroom_id = data['chatroom_id']
-    text = data['text']
-    user_id = data['user_id']
-    message = Messages(chatroom_id=chatroom_id, text=text, user_id=user_id)
-    db.session.add(message)
-    db.session.commit()
-    emit('message', {'text': text, 'user_id': user_id}, to=chatroom_id)
 
 #LOGIN MANAGER
 @app.route('/login')
@@ -1272,7 +1371,6 @@ def api_add_product():
 
 #API FOR EDITING PRODUCT. PASS FARMER ID AND PRODUCT ID ALONG WITH THE CHANGES
 @app.route('/api/edit-product', methods=['POST'])
-@login_required
 def api_edit_product():
     data = request.get_json()
     farmer_id = data.get("farmer_id")
@@ -1292,7 +1390,6 @@ def api_edit_product():
     return jsonify({"message": "Product updated successfully"}), 200
 
 @app.route('/api/delete-product', methods=['POST'])
-@login_required
 def api_delete_product():
     data = request.get_json()
     product_id = data.get("product_id")
@@ -1302,7 +1399,6 @@ def api_delete_product():
     return jsonify({"message": "Product deleted successfully"}), 200
 
 @app.route('/api/get-user-id/<role>/<int:role_id>', methods=['GET'])
-@login_required
 def get_user_id(role, role_id):
     if role == "farmer":
         farmer = Farmer.query.get(role_id)
@@ -1356,4 +1452,4 @@ def api_user_info():
     
 #Main
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    app.run(debug=True)
