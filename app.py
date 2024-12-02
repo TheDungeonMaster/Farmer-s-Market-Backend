@@ -1168,6 +1168,29 @@ def api_order_history():
 
     return jsonify(order_details), 200
 
+@app.route('/api/farmer_orders', methods=['POST'])
+def api_farmer_orders():
+    data = request.get_json()
+    farmer_id = data.get("farmer_id")
+    orders = Order.query.filter_by(farmer_id=farmer_id).all()
+    order_list = []
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        for orderitem in orderitems:
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            order_list.append({
+                "order_id": order.order_id,
+                "order_status": order.status,
+                "order_date": order.order_date,
+                "orderitem_id": orderitem.id,
+                "product_id": orderitem.product_id,
+                "product_title": product.title,
+                "product_price": product.price,
+                "amount": orderitem.amount,
+                "buyer_id": order.buyer_id,
+            }) 
+    return jsonify(order_list), 200
+
 #CHAT FOR MAIN PAGE
 @app.route('/message/farm/<string:farm_name>')
 def message_farm(farm_name):
