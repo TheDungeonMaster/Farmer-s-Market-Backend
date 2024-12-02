@@ -55,6 +55,14 @@
         .checkout-btn:hover {
             background-color: var(--secondary-color);
         }
+        .delete-button {
+            color: var(--secondary-color);
+            text-decoration: none;
+            border: 0;
+            font-size: 16px;
+            padding: 0.5rem 0;
+            background-color: var(--background-light)
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
@@ -83,8 +91,9 @@
                                 <label for="remove_amount_{{ item.product_id }}">Amount to Remove:</label>
                                 <input type="number" id="remove_amount_{{ item.product_id }}" name="amount" class="form-control" min="1" max="{{ item.amount }}" value="1" required>
                             </div>
-                            <button type="submit" class="btn btn-danger mt-2">Remove</button>
+                            <button type="submit" class="delete-button btn btn-danger mt-2">Remove amount</button>
                         </form>
+                        <a  href="/remove_item/{{item.orderitem_id}}" class="delete-button btn btn-danger mt-2">Remove all</a>
                     </div>
                     <div>
                         <p><strong>Total: ${{ item.price * item.amount }}</strong></p>

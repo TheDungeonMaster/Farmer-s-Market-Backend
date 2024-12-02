@@ -100,6 +100,10 @@
             justify-content: center;
             align-items: center;
         }
+        .farm-name {
+            font-size: 18px;
+            margin-bottom: 2rem !important;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/styles.css') }}"/>
 </head>
@@ -137,6 +141,9 @@
         <p class="username" style="display: none;"></p>
         {% if role == 'buyer' %}
             <a href="/order-history/{{ buyer_id }}">View order history</a>
+        {% endif %}
+        {% if role == 'admin' or role == 'moderator' %}
+            <a href="/order-logs">View order logs</a>
         {% endif %}
     </div>
     <div class="home-body">
@@ -180,8 +187,8 @@
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">{{ product.title }}</h5>
+                            <p class="card-text farm-name">Farm: {{ product.farm_name }}</p>
                             <p class="card-text">{{ product.description }}</p>
-                            <p class="card-text">{{ product.farm_name }}</p>
                             <p class="card-text"><strong>Price:</strong> ${{ product.price }}</p>
                             {% if role == 'buyer' or role == 'admin' %}
                                 <form method = "POST" action="/add_to_cart/{{ product.product_id }}">
@@ -192,7 +199,7 @@
                                     <button type="submit" class="btn btn-primary mt-2">Add to Cart</button>
                                 </form>
                                 <div class="product-buttons">
-                                    <a class="btn write-button" href="/message/{{ product.farm_name }}" style="display: none;">Write to Seller</a>
+                                    <a class="btn write-button" href="/message/farm/{{ product.farm_name }}" style="display: none;">Write to Seller</a>
                                     <a class="btn write-button" href="/farmer/{{ product.farm_name }}/info">View Seller Information</a>
                                 </div>
                             {% endif %}

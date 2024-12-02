@@ -59,6 +59,15 @@
         .registration-container input[type="submit"]:hover {
             background-color: var(--secondary-color);
         }
+        .terms-container {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+        .terms-container input[type="checkbox"] {
+            margin-right: 0.5rem;
+        }
         .error {
             font-size: 16px;
             font-weight: bold;
@@ -103,6 +112,11 @@
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required>
+
+        <div class="terms-container">
+            <input type="checkbox" id="terms" name="terms" required>
+            <label for="terms">I agree to the <a href="/terms" target="_blank">terms and conditions</a></label>
+        </div>
 
         <input type="submit" value="Register">
     </form>

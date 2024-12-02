@@ -266,11 +266,72 @@ def delete_farmer(farmer_id):
     if current_user.role != 'admin' and current_user.role != 'moderator':
         return jsonify({"success": False, "message": "Unauthorized"}), 403
     farmer = Farmer.query.get(farmer_id)
+    farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    if farm:
+        products = Product.query.filter_by(farm_name=farm.farm_name).all()
+        if products:
+            for product in products:
+                db.session.delete(product)
+                db.session.commit()
+        db.session.delete(farm)
+        db.session.commit()
     user = User.query.filter_by(email=farmer.email).first()
+    notifications = Notifications.query.filter_by(user_id=user.user_id).all()
+    if notifications:
+        for notification in notifications:
+            db.session.delete(notification)
+            db.session.commit()
+    orders = Order.query.filter_by(farmer_id=farmer_id).all()
+    if orders:
+        for order in orders:
+            db.session.delete(order)
+            db.session.commit()
+    messages = Message.query.filter_by(farmer_id=farmer_id).all()
+    if messages:
+        for message in messages:
+            db.session.delete(message)
+            db.session.commit()
+    chatrooms = Chatroom.query.filter_by(farmer_id=farmer_id).all()
+    if chatrooms:
+        for chatroom in chatrooms:
+            db.session.delete(chatroom)
+            db.session.commit()
     db.session.delete(user)
     db.session.delete(farmer)
     db.session.commit()
     return jsonify({"message": "Farmer deleted"}), 200
+
+@app.route('/delete-buyer/<int:buyer_id>', methods=['DELETE'])
+@login_required
+def delete_buyer(buyer_id):
+    if current_user.role != 'admin' and current_user.role != 'moderator':
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    buyer = Buyer.query.get(buyer_id)
+    user = User.query.filter_by(email=buyer.email).first()
+    notifications = Notifications.query.filter_by(user_id=user.user_id).all()
+    if notifications:
+        for notification in notifications:
+            db.session.delete(notification)
+            db.session.commit()
+    orders = Order.query.filter_by(buyer_id=buyer_id).all()
+    if orders:
+        for order in orders:
+            db.session.delete(order)
+            db.session.commit()
+    messages = Message.query.filter_by(buyer_id=buyer_id).all()
+    if messages:
+        for message in messages:
+            db.session.delete(message)
+            db.session.commit()
+    chatrooms = Chatroom.query.filter_by(buyer_id=buyer_id).all()
+    if chatrooms:
+        for chatroom in chatrooms:
+            db.session.delete(chatroom)
+            db.session.commit()
+    db.session.delete(user)
+    db.session.delete(buyer)
+    db.session.commit()
+    return jsonify({"message": "Buyer deleted"}), 200
 
 @app.route('/pending-farmers', methods=['GET'])
 @login_required
@@ -650,10 +711,13 @@ def fulfill_order(farmer_id, order_id):
 @app.route('/farmer/<int:farmer_id>/info')
 @login_required
 def display_info_id(farmer_id):
+    role = current_user.role
     farm = Farm.query.filter_by(farmer_id=farmer_id).first()
+    farmer = Farmer.query.filter_by(farmer_id=farmer_id).first()
+    farmer_id = farmer.farmer_id
     products = Product.query.filter_by(farm_name=farm.farm_name).all()
     farm_name = farm.farm_name
-    return render_template('farmer_info.html', products=products, farmer_id=farmer_id, farm_name=farm_name, farm = farm)
+    return render_template('farmer_info.html', products=products, farmer_id=farmer_id, farm_name=farm_name, farm = farm, role = role)
 
 @app.route('/farmer/<string:farm_name>/info')
 @login_required
@@ -666,14 +730,33 @@ def display_info_product(farm_name):
     farm_name = farm.farm_name
     return render_template('farmer_info.html', products=products, farmer_id=farmer_id, farm_name=farm_name, farm = farm, role = role)
 
-@app.route('/farmer/farmer_dashboard/<int:farmer_id>', methods=['POST'])
+@app.route('/farmer/farmer_dashboard/<int:product_id>', methods=['POST'])
 @login_required
-def delete_product(farmer_id):
-    product_id = request.form.get('product_id')
+def delete_product(product_id):
+    if current_user.role != 'farmer':
+        return redirect(url_for('login'))
     product = Product.query.get(product_id)
+    order_items = OrderItem.query.filter_by(product_id=product_id).all()
+    for order_item in order_items:
+        db.session.delete(order_item)
+        db.session.commit()
     db.session.delete(product)
     db.session.commit()
-    return redirect(url_for('farmer_dashboard', farmer_id=farmer_id))
+    return redirect(request.referrer)
+
+@app.route('/delete_product/<int:product_id>')
+@login_required
+def delete_product_route(product_id):
+    if current_user.role != 'farmer' and current_user.role != 'admin' and current_user.role != 'moderator':
+        return redirect(url_for('login'))
+    product = Product.query.get(product_id)
+    order_items = OrderItem.query.filter_by(product_id=product_id).all()
+    for order_item in order_items:
+        db.session.delete(order_item)
+        db.session.commit()
+    db.session.delete(product)
+    db.session.commit()
+    return redirect(request.referrer)
 
 @app.route('/farmer/<int:farmer_id>/edit-product/<int:product_id>', methods=['GET', 'POST'])
 @login_required
@@ -852,7 +935,11 @@ def add_to_cart(product_id):
         order = Order(buyer_id=buyer.buyer_id, farmer_id=farmer_id, status='pending', preference='N/A')
         db.session.add(order)
         db.session.commit()
-    order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
+    order_item = OrderItem.query.filter_by(order_id=order.order_id, product_id=product_id).first()
+    if order_item:
+        order_item.amount += int(amount)
+    else:
+        order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
     db.session.add(order_item)
     db.session.commit()
     return redirect(request.referrer)
@@ -874,6 +961,16 @@ def remove_from_cart(orderitem_id):
         db.session.delete(orderitem)
     db.session.commit()
     return redirect(url_for('shopping_cart', buyer_id=buyer_id))
+
+@app.route('/remove_item/<int:orderitem_id>')
+@login_required
+def remove_item(orderitem_id):
+    orderitem = OrderItem.query.filter_by(id=orderitem_id).first()
+    if not orderitem:
+        return jsonify({"message": "Order item not found"}), 404
+    db.session.delete(orderitem)
+    db.session.commit()
+    return redirect(request.referrer)
     
 @app.route('/checkout')
 @login_required
@@ -893,6 +990,22 @@ def checkout():
         db.session.add(notification)
         db.session.commit()
     return redirect(url_for('index'))
+
+@app.route('/order-logs')
+@login_required
+def order_logs():
+    orders = Order.query.all()
+    order_details = []
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        order_total_price = 0
+        products = []
+        for orderitem in orderitems:
+            products.append({'product':Product.query.filter_by(product_id=orderitem.product_id).first(), 'orderitem':orderitem})
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            order_total_price += product.price * orderitem.amount
+        order_details.append({'order':order, 'products':products, 'orderitems':orderitems, 'order_total_price':order_total_price})
+    return render_template('order_logs.html', orders=orders, order_details=order_details)
 
 @app.route('/order-history/<int:buyer_id>')
 @login_required
@@ -928,13 +1041,12 @@ def api_shopping_cart():
     total_amount = 0
     for order in orders:
         orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
-        orderitem_list = []
         for orderitem in orderitems:
             product = Product.query.filter_by(product_id=orderitem.product_id).first()
             total_price = product.price * orderitem.amount
             grand_total += total_price
             total_amount += orderitem.amount
-            orderitem_list.append({
+            order_list.append({
                 "orderitem_id": orderitem.id,
                 "order_id": order.order_id,
                 "product_id": orderitem.product_id,
@@ -942,8 +1054,6 @@ def api_shopping_cart():
                 "price": product.price,
                 "amount": orderitem.amount
             })
-        order_list.append(orderitem_list)
-        order_list.append({"grand_total": grand_total, "total_amount": total_amount})
     return jsonify(order_list), 200
 
 @app.route("/api/checkout", methods=["POST"])
@@ -973,7 +1083,11 @@ def api_add_to_cart():
         order = Order(buyer_id=buyer.buyer_id, farmer_id=farmer_id, status='pending', preference='N/A')
         db.session.add(order)
         db.session.commit()
-    order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
+    order_item = OrderItem.query.filter_by(order_id=order.order_id, product_id=product_id).first()
+    if order_item:
+        order_item.amount += int(amount)
+    else:
+        order_item = OrderItem(order_id=order.order_id, product_id=product_id, amount=amount)
     db.session.add(order_item)
     db.session.commit()
     return jsonify({"message": "Product added to cart"}), 200
@@ -982,7 +1096,7 @@ def api_add_to_cart():
 def api_remove_from_cart():
     data = request.get_json()
     buyer_id = data.get("buyer_id")
-    order_item_id = data.get("order_item_id")
+    orderitem_id = data.get("orderitem_id")
     amount = data.get("amount")
     orderitem = OrderItem.query.filter_by(id=orderitem_id).first()
     if not orderitem:
@@ -991,9 +1105,20 @@ def api_remove_from_cart():
     if not order:
         return jsonify({"message": "Order not found"}), 404
     buyer_id = order.buyer_id
-    order_item.amount -= amount
-    if order_item.amount <= 0:
-        db.session.delete(order_item)
+    orderitem.amount -= amount
+    if orderitem.amount <= 0:
+        db.session.delete(orderitem)
+    db.session.commit()
+    return jsonify({"message": "Product removed from cart"}), 200
+
+@app.route('/api/remove_item', methods=['POST'])
+def api_remove_item():
+    data = request.get_json()
+    orderitem_id = data.get("orderitem_id")
+    orderitem = OrderItem.query.filter_by(id=orderitem_id).first()
+    if not orderitem:
+        return jsonify({"message": "Order item not found"}), 404
+    db.session.delete(orderitem)
     db.session.commit()
     return jsonify({"message": "Product removed from cart"}), 200
 
@@ -1043,8 +1168,31 @@ def api_order_history():
 
     return jsonify(order_details), 200
 
+@app.route('/api/farmer_orders', methods=['POST'])
+def api_farmer_orders():
+    data = request.get_json()
+    farmer_id = data.get("farmer_id")
+    orders = Order.query.filter_by(farmer_id=farmer_id).all()
+    order_list = []
+    for order in orders:
+        orderitems = OrderItem.query.filter_by(order_id=order.order_id).all()
+        for orderitem in orderitems:
+            product = Product.query.filter_by(product_id=orderitem.product_id).first()
+            order_list.append({
+                "order_id": order.order_id,
+                "order_status": order.status,
+                "order_date": order.order_date,
+                "orderitem_id": orderitem.id,
+                "product_id": orderitem.product_id,
+                "product_title": product.title,
+                "product_price": product.price,
+                "amount": orderitem.amount,
+                "buyer_id": order.buyer_id,
+            }) 
+    return jsonify(order_list), 200
+
 #CHAT FOR MAIN PAGE
-@app.route('/message/<string:farm_name>')
+@app.route('/message/farm/<string:farm_name>')
 def message_farm(farm_name):
     farm = Farm.query.filter_by(farm_name=farm_name).first()
     farmer = Farmer.query.filter_by(farmer_id=farm.farmer_id).first()
@@ -1069,7 +1217,7 @@ def message_user(user_id):
     chatroom_id = chatroom.chatroom_id
     return redirect(url_for('chatroom', chatroom_id=chatroom_id))
 
-@app.route('/message/<int:farmer_id>')
+@app.route('/message/farmer/<int:farmer_id>')
 def message_user_farmer(farmer_id):
     farmer = Farmer.query.filter_by(farmer_id=farmer_id).first()
     other_user = User.query.filter_by(email=farmer.email).first()
@@ -1449,6 +1597,10 @@ def api_user_info():
                                 "farm_size": farm.farm_size,
                                 "crop_type": farm.crop_type}), 200
     return jsonify({"message": "User not found"}), 404
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
     
 #Main
 if __name__ == '__main__':
